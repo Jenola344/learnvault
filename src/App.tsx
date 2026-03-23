@@ -7,6 +7,7 @@ import Debug from "./pages/Debug"
 import Home from "./pages/Home"
 import Leaderboard from "./pages/Leaderboard"
 import Learn from "./pages/Learn"
+import NotFound from "./pages/NotFound"
 import Profile from "./pages/Profile"
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
 				<Route path="/profile" element={<Profile />} />
 				<Route path="/debug" element={<Debug />} />
 				<Route path="/debug/:contractName" element={<Debug />} />
+				<Route path="*" element={<NotFound />} />
 			</Route>
 		</Routes>
 	)
