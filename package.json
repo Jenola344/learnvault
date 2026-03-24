@@ -15,7 +15,8 @@
     "format": "prettier . --write",
     "docs:generate": "npm run docs:generate --prefix server",
     "prepare": "husky",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "test": "vitest run"
   },
   "workspaces": [
     "packages/*"
