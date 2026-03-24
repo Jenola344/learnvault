@@ -24,6 +24,7 @@ const pemString = z
   .min(1)
   .transform((s) => s.replace(/\\n/g, "\n").trim());
 import { validatorRouter } from "./routes/validator.routes";
+import { globalLimiter } from "./middleware/rate-limit.middleware";
 import { commentsRouter } from "./routes/comments.routes";
 import { adminMilestonesRouter } from "./routes/admin-milestones.routes";
 import { initDb } from "./db/index";
@@ -64,18 +65,16 @@ const jwtService = createJwtService(jwtPrivateKey, jwtPublicKey);
 const authService = createAuthService(nonceStore, jwtService);
 
 const app = express();
+
 const openApiSpec = buildOpenApiSpec();
 const openApiYaml = YAML.stringify(openApiSpec);
 
 app.set("trust proxy", 1);
 
 app.use(morgan("dev"));
-app.use(
-  cors({
-    origin: env.CORS_ORIGIN
-  })
-);
+app.use(cors({ origin: env.CORS_ORIGIN }));
 app.use(express.json());
+app.use(globalLimiter);
 
 app.use("/api", healthRouter);
 app.use("/api/auth", createAuthRouter(authService));

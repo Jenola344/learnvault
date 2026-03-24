@@ -1,5 +1,5 @@
 {
-  "name": "scaffold-stellar-frontend",
+  "name": "learnvault-frontend",
   "type": "module",
   "version": "0.0.1",
   "private": true,
@@ -32,6 +32,7 @@
     "@theahaco/ts-config": "^1.2.0",
     "canvas-confetti": "^1.9.4",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.38.0",
     "i18next": "^25.10.5",
     "i18next-browser-languagedetector": "^8.2.1",
     "lossless-json": "^4.3.0",
