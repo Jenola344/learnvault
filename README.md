@@ -343,15 +343,27 @@ The LearnVault Technical Whitepaper is authored in Markdown and exported to PDF.
 
 ### Prerequisites
 
-Ensure you have Rust and Cargo installed:
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
+1. **Install Rust and Stellar CLI:**
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   npm install -g @stellar/stellar-cli
+   ```
 
-Install cargo-watch for watch mode:
-```bash
-cargo install cargo-watch
-```
+2. **Install Visual Studio Build Tools (Windows):**
+   ```bash
+   # Download Visual Studio Build Tools installer
+   # Visit: https://visualstudio.microsoft.com/downloads/
+   # Or use winget: wing install VisualStudio.2022.BuildTools
+   ```
+
+3. **Configure Environment:**
+   ```bash
+   # Copy environment template
+   cp .env.example .env
+   
+   # Edit .env with your configuration
+   # Set STELLAR_SCAFFOLD_ENV=testnet for testnet deployment
+   ```
 
 ### Run Tests
 ```bash
