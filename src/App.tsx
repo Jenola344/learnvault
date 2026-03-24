@@ -6,15 +6,13 @@ import CourseCard from "./components/CourseCard"
 import { labPrefix } from "./contracts/util"
 import Debug from "./pages/Debug"
 import Home from "./pages/Home"
-// NAYA IMPORT: Apna CourseCard yahan import karo
+import Profile from "./pages/Profile"
 
-// TESTING KE LIYE DUMMY PAGE (Sirf UI check karne ke liye)
 const CourseCatalog = () => (
 	<div style={{ padding: "24px" }}>
 		<h1 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "24px" }}>
 			Course Catalog
 		</h1>
-		{/* CSS Grid for Responsive Cards */}
 		<div
 			style={{
 				display: "grid",
@@ -52,8 +50,9 @@ function App() {
 		<Routes>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<Home />} />
-				{/* NAYA ROUTE: Yahan tumhara component dikhega */}
 				<Route path="/courses" element={<CourseCatalog />} />
+				<Route path="/profile" element={<Profile />} />
+				<Route path="/profile/:walletAddress" element={<Profile />} />
 				<Route path="/debug" element={<Debug />} />
 				<Route path="/debug/:contractName" element={<Debug />} />
 			</Route>
@@ -69,7 +68,6 @@ const AppLayout: React.FC = () => (
 			disableSetThemeOnLoad
 			contentCenter={
 				<>
-					{/* NAYA BUTTON NAVBAR MEIN */}
 					<NavLink to="/courses">
 						{({ isActive }) => (
 							<Button variant="tertiary" size="md" disabled={isActive}>
@@ -84,6 +82,14 @@ const AppLayout: React.FC = () => (
 							<Button variant="tertiary" size="md" disabled={isActive}>
 								<Icon.Code02 size="md" />
 								Contract Explorer
+							</Button>
+						)}
+					</NavLink>
+					<NavLink to="/profile">
+						{({ isActive }) => (
+							<Button variant="tertiary" size="md" disabled={isActive}>
+								<Icon.UserCircle size="md" />
+								Profile
 							</Button>
 						)}
 					</NavLink>
