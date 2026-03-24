@@ -91,7 +91,7 @@ const Home: React.FC = () => {
 									{t("home.sampleContracts.guessDesc1")}
 								</span>
 								<Link
-									to="https://scaffoldstellar.org/docs/tutorial/overview"
+									to="https://github.com/bakeronchain/learnvault#readme"
 									className="text-brand-cyan hover:underline ml-2"
 									target="_blank"
 								>
