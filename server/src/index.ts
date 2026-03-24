@@ -23,6 +23,10 @@ const pemString = z
   .string()
   .min(1)
   .transform((s) => s.replace(/\\n/g, "\n").trim());
+import { validatorRouter } from "./routes/validator.routes";
+import { commentsRouter } from "./routes/comments.routes";
+import { initDb } from "./db/index";
+
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
@@ -75,9 +79,24 @@ app.use(express.json());
 app.use("/api", healthRouter);
 app.use("/api/auth", createAuthRouter(authService));
 app.use("/api", createMeRouter(jwtService));
+app.use("/api", coursesRouter);
+app.use("/api", validatorRouter);
+app.use("/api", eventsRouter);
+app.use("/api", commentsRouter);
+
+
+app.get("/api/docs", (_req, res) => {
+  res.type("application/yaml").send(openApiYaml);
+});
+
+if (process.env.NODE_ENV !== "production") {
+  app.use("/api/docs/ui", swaggerUi.serve, swaggerUi.setup(openApiSpec));
+}
 
 app.use(errorHandler);
 
-app.listen(env.PORT, () => {
+app.listen(env.PORT, async () => {
+  await initDb();
   console.log(`Server listening on port ${env.PORT}`);
 });
+
