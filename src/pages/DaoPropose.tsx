@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react"
+import ReactMarkdown from "react-markdown"
 import { useNavigate } from "react-router-dom"
 import { useWallet } from "../hooks/useWallet"
 import { useScholarshipTreasury } from "../util/scholarshipTreasury"
-import ReactMarkdown from "react-markdown"
 
 type ProposalType = "scholarship" | "parameter_change" | "new_course"
 

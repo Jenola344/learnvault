@@ -30,6 +30,11 @@ import {
 // Load server/.env whether you run from repo root or from server/
 dotenv.config({ path: path.resolve(__dirname, "..", ".env") })
 
+const pemString = z
+	.string()
+	.min(1)
+	.transform((s) => s.replace(/\\n/g, "\n").trim())
+
 const envSchema = z.object({
 	PORT: z.coerce.number().int().positive().default(4000),
 	CORS_ORIGIN: z.string().default("http://localhost:5173"),
@@ -40,6 +45,7 @@ const envSchema = z.object({
 })
 
 const env = envSchema.parse(process.env)
+
 const isProduction = env.NODE_ENV === "production"
 
 let jwtPrivateKey = env.JWT_PRIVATE_KEY
@@ -84,6 +90,13 @@ app.use("/api", commentsRouter)
 app.use("/api", adminMilestonesRouter)
 app.use("/api", uploadRouter)
 
+// Start event poller (non-prod only for now)
+if (process.env.NODE_ENV !== "production") {
+	void import("./workers/event-poller.js").then(({ startEventPoller }) => {
+		void startEventPoller().catch(console.error)
+	})
+}
+
 app.get("/api/docs", (_req, res) => {
 	res.type("application/yaml").send(openApiYaml)
 })
@@ -104,3 +117,14 @@ initDb()
 		console.error("Failed to initialize database:", err)
 		process.exit(1)
 	})
+// Graceful shutdown
+process.on("SIGTERM", () => {
+	void import("./workers/event-poller.js").then(({ stopEventPoller }) => {
+		void stopEventPoller()
+	})
+	process.exit(0)
+})
+
+app.listen(env.PORT, () => {
+	console.log(`Server listening on port ${env.PORT}`)
+})
