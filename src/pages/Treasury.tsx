@@ -219,7 +219,7 @@ const StatCard: React.FC<{
 	icon: string
 	color: string
 }> = ({ label, value, icon, color }) => (
-	<div className="glass-card p-8 rounded-[2rem] hover:border-white/20 transition-all hover:-translate-y-2 group">
+	<div className="glass-card p-8 rounded-4xl hover:border-white/20 transition-all hover:-translate-y-2 group">
 		<div className="text-3xl mb-4 group-hover:scale-125 transition-transform duration-500">
 			{icon}
 		</div>
