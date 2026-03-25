@@ -17,6 +17,7 @@
     "prepare": "husky",
     "typecheck": "tsc",
     "test": "cargo test --workspace",
+    "test:frontend": "vitest run",
     "test:contracts": "cargo test --workspace",
     "test:watch": "cargo watch -x 'test --workspace'",
     "test:coverage": "vitest run --coverage"
