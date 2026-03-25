@@ -4,7 +4,6 @@ import styles from "./App.module.css"
 import ConnectAccount from "./components/ConnectAccount"
 import CourseCard from "./components/CourseCard"
 import { labPrefix } from "./contracts/util"
-import { Routes, Route, Outlet } from "react-router-dom"
 import ComingSoon from "./components/ComingSoon"
 import ErrorBoundary from "./components/ErrorBoundary"
 import Footer from "./components/Footer"
@@ -13,6 +12,7 @@ import Admin from "./pages/Admin"
 import Courses from "./pages/Courses"
 import Credential from "./pages/Credential"
 import Dao from "./pages/Dao"
+import Dashboard from "./pages/Dashboard"
 import DaoProposals from "./pages/DaoProposals"
 import DaoPropose from "./pages/DaoPropose"
 import Debug from "./pages/Debug"
@@ -189,7 +189,7 @@ function App() {
 					path="/dashboard"
 					element={
 						<ErrorBoundary>
-							<ComingSoon title="My Dashboard" />
+							<Dashboard />
 						</ErrorBoundary>
 					}
 				/>
@@ -221,88 +221,8 @@ function App() {
 		</Routes>
 	)
 }
-
 const AppLayout: React.FC = () => (
-	<div className={styles.AppLayout}>
-		<Layout.Header
-			projectId="Scaffold"
-			projectTitle="Scaffold"
-			disableSetThemeOnLoad
-			contentCenter={
-				<>
-					<NavLink to="/courses">
-						{({ isActive }) => (
-							<Button variant="tertiary" size="md" disabled={isActive}>
-								<Icon.BookOpen01 size="md" />
-								Courses
-							</Button>
-						)}
-					</NavLink>
-
-					<NavLink to="/debug">
-						{({ isActive }) => (
-							<Button variant="tertiary" size="md" disabled={isActive}>
-								<Icon.Code02 size="md" />
-								Contract Explorer
-							</Button>
-						)}
-					</NavLink>
-					<NavLink to="/profile">
-						{({ isActive }) => (
-							<Button variant="tertiary" size="md" disabled={isActive}>
-								<Icon.UserCircle size="md" />
-								Profile
-							</Button>
-						)}
-					</NavLink>
-					<NavLink to={labPrefix()}>
-						<Button variant="tertiary" size="md">
-							<Icon.SearchMd size="md" />
-							Transaction Explorer
-						</Button>
-					</NavLink>
-				</>
-			}
-			contentRight={<ConnectAccount />}
-		/>
-
-		<main>
-			<Layout.Content>
-				<Layout.Inset>
-					<Outlet />
-				</Layout.Inset>
-			</Layout.Content>
-		</main>
-
-		<Layout.Footer>
-			<nav>
-				<a
-					href="https://github.com/theahaco/scaffold-stellar"
-					className="Link Link--secondary"
-					target="_blank"
-					rel="noreferrer"
-				>
-					<Icon.GitPullRequest size="sm" /> GitHub
-				</a>
-				<a
-					href="https://www.youtube.com/watch?v=0syGaIn3ULk&list=PLmr3tp_7-7Gjj6gn5-bBn-QTMyaWzwOU5"
-					className="Link Link--secondary"
-					target="_blank"
-					rel="noreferrer"
-				>
-					<Icon.Youtube size="sm" /> Tutorial
-				</a>
-				<a
-					href="https://scaffoldstellar.org"
-					className="Link Link--secondary"
-					target="_blank"
-					rel="noreferrer"
-				>
-					<Icon.BookOpen01 size="sm" /> View docs
-				</a>
-			</nav>
-		</Layout.Footer>
-	<div className="min-h-screen flex flex-col pt-24">
+	<div className="min-h-screen flex flex-col pt-24 overflow-x-hidden w-full max-w-full">
 		<NavBar />
 		<main className="flex-1 relative z-10">
 			<Outlet />

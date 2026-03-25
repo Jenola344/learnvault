@@ -16,10 +16,12 @@
 	--animate-mesh: mesh 20s ease infinite;
 
 	@keyframes mesh {
+
 		0%,
 		100% {
 			background-position: 0% 50%;
 		}
+
 		50% {
 			background-position: 100% 50%;
 		}
@@ -29,6 +31,7 @@
 		0% {
 			transform: translateX(-100%);
 		}
+
 		100% {
 			transform: translateX(100%);
 		}
@@ -39,8 +42,14 @@
 	color-scheme: dark;
 }
 
+html,
 body {
 	margin: 0;
+	padding: 0;
+	width: 100%;
+}
+
+body {
 	background-color: #05070a;
 	background-image: var(--bg-mesh-gradient);
 	background-size: 200% 200%;
@@ -62,11 +71,9 @@ body {
 }
 
 .glass-card {
-	background: linear-gradient(
-		135deg,
-		rgba(255, 255, 255, 0.05) 0%,
-		rgba(255, 255, 255, 0.01) 100%
-	);
+	background: linear-gradient(135deg,
+			rgba(255, 255, 255, 0.05) 0%,
+			rgba(255, 255, 255, 0.01) 100%);
 	backdrop-filter: blur(24px);
 	border: 1px solid rgba(255, 255, 255, 0.08);
 	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
@@ -112,11 +119,9 @@ body {
 	right: 0;
 	bottom: 0;
 	left: 0;
-	background: linear-gradient(
-		90deg,
-		transparent,
-		rgba(255, 255, 255, 0.05),
-		transparent
-	);
+	background: linear-gradient(90deg,
+			transparent,
+			rgba(255, 255, 255, 0.05),
+			transparent);
 	animation: shimmer 2s infinite;
 }
