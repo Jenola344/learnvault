@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { useToast } from "../components/Toast/ToastProvider"
 import { rpcUrl } from "../contracts/util"
+import { ErrorCode, createAppError } from "../types/errors"
+import { parseError } from "../utils/errors"
 import { useWallet } from "./useWallet"
 
 export interface DonorContribution {
@@ -93,7 +95,15 @@ const fetchContractEvents = async (
 		return events.filter((evt) =>
 			JSON.stringify(evt).toLowerCase().includes(walletAddress.toLowerCase()),
 		)
-	} catch {
+	} catch (err) {
+		console.warn(
+			createAppError(
+				ErrorCode.NETWORK_ERROR,
+				"Failed to fetch contract events",
+				{ contractCount: contractIds.length },
+				err,
+			),
+		)
 		return []
 	}
 }
@@ -382,15 +392,15 @@ export const useDonor = (): DonorData => {
 			} catch (_err) {
 				setData((prev) => ({
 					...prev,
-					error: "Failed to load donor data",
+					error: appError.message,
 					isLoading: false,
 				}))
-				showError("Failed to load donor data")
+				showError(userMessage)
 			}
 		}
 
 		void loadData()
-	}, [address])
+	}, [address, showError])
 
 	return data
 }

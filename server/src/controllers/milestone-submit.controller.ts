@@ -1,46 +1,34 @@
 import { type Request, type Response } from "express"
-import { z } from "zod"
 import { milestoneStore } from "../db/milestone-store"
 
-const submitSchema = z.object({
-	scholarAddress: z.string().min(1, "scholarAddress is required"),
-	courseId: z.string().min(1, "courseId is required"),
-	milestoneId: z
-		.number()
-		.int()
-		.nonnegative("milestoneId must be a non-negative integer"),
-	evidenceGithub: z.string().url().optional(),
-	evidenceIpfsCid: z.string().optional(),
-	evidenceDescription: z.string().optional(),
-})
+interface MilestoneSubmitRequestBody {
+	scholarAddress?: string
+	learner_address?: string
+	courseId?: string
+	course_id?: string
+	milestoneId?: number
+	milestone_id?: number
+	evidenceGithub?: string
+	evidenceIpfsCid?: string
+	evidenceDescription?: string
+	evidence_url?: string
+}
 
 export async function submitMilestoneReport(
 	req: Request,
 	res: Response,
 ): Promise<void> {
-	const parsed = submitSchema.safeParse(req.body)
-	if (!parsed.success) {
-		res
-			.status(400)
-			.json({ error: "Invalid request body", issues: parsed.error.issues })
-		return
-	}
+	const body = req.body as MilestoneSubmitRequestBody
 
-	const {
-		scholarAddress,
-		courseId,
-		milestoneId,
-		evidenceGithub,
-		evidenceIpfsCid,
-		evidenceDescription,
-	} = parsed.data
+	const scholarAddress = body.scholarAddress ?? body.learner_address
+	const courseId = body.courseId ?? body.course_id
+	const milestoneId = body.milestoneId ?? body.milestone_id
+	const evidenceGithub = body.evidenceGithub ?? body.evidence_url
+	const evidenceIpfsCid = body.evidenceIpfsCid
+	const evidenceDescription = body.evidenceDescription
 
-	// At least one form of evidence must be provided
-	if (!evidenceGithub && !evidenceIpfsCid && !evidenceDescription) {
-		res.status(400).json({
-			error:
-				"At least one evidence field is required (evidenceGithub, evidenceIpfsCid, or evidenceDescription)",
-		})
+	if (!scholarAddress || !courseId || milestoneId === undefined) {
+		res.status(400).json({ error: "Invalid request body" })
 		return
 	}
 

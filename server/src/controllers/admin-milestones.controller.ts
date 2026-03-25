@@ -1,5 +1,4 @@
 import { type Request, type Response } from "express"
-import { z } from "zod"
 import { milestoneStore } from "../db/milestone-store"
 import { type AdminRequest } from "../middleware/admin.middleware"
 import { stellarContractService } from "../services/stellar-contract.service"
@@ -98,10 +97,6 @@ export async function approveMilestone(
 	}
 }
 
-const rejectBodySchema = z.object({
-	reason: z.string().min(1, "Rejection reason is required"),
-})
-
 export async function rejectMilestone(
 	req: AdminRequest,
 	res: Response,
@@ -112,15 +107,7 @@ export async function rejectMilestone(
 		return
 	}
 
-	const parsed = rejectBodySchema.safeParse(req.body)
-	if (!parsed.success) {
-		res
-			.status(400)
-			.json({ error: "Invalid request body", issues: parsed.error.issues })
-		return
-	}
-
-	const { reason } = parsed.data
+	const { reason } = req.body as { reason: string }
 	const validatorAddress = req.adminAddress ?? "unknown"
 
 	try {

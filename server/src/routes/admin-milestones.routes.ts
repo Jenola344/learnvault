@@ -6,7 +6,15 @@ import {
 	rejectMilestone,
 } from "../controllers/admin-milestones.controller"
 import { submitMilestoneReport } from "../controllers/milestone-submit.controller"
+import {
+	approveMilestoneBodySchema,
+	legacyMilestoneSubmitBodySchema,
+	milestoneReportIdParamSchema,
+	milestoneSubmitBodySchema,
+	rejectMilestoneBodySchema,
+} from "../lib/zod-schemas"
 import { requireAdmin } from "../middleware/admin.middleware"
+import { validate } from "../middleware/validate.middleware"
 import { milestoneSubmitRateLimiter } from "../middleware/milestone-rate-limit.middleware"
 
 export const adminMilestonesRouter = Router()
@@ -59,6 +67,9 @@ adminMilestonesRouter.get(
 adminMilestonesRouter.get(
 	"/admin/milestones/:id",
 	requireAdmin,
+	validate({
+		params: milestoneReportIdParamSchema,
+	}),
 	getMilestoneById,
 )
 
@@ -90,6 +101,10 @@ adminMilestonesRouter.get(
 adminMilestonesRouter.post(
 	"/admin/milestones/:id/approve",
 	requireAdmin,
+	validate({
+		params: milestoneReportIdParamSchema,
+		body: approveMilestoneBodySchema,
+	}),
 	approveMilestone,
 )
 
@@ -133,6 +148,10 @@ adminMilestonesRouter.post(
 adminMilestonesRouter.post(
 	"/admin/milestones/:id/reject",
 	requireAdmin,
+	validate({
+		params: milestoneReportIdParamSchema,
+		body: rejectMilestoneBodySchema,
+	}),
 	rejectMilestone,
 )
 
@@ -177,5 +196,17 @@ adminMilestonesRouter.post(
 adminMilestonesRouter.post(
 	"/milestones/submit",
 	milestoneSubmitRateLimiter,
+	validate({
+		body: legacyMilestoneSubmitBodySchema,
+	}),
+	submitMilestoneReport,
+)
+
+adminMilestonesRouter.post(
+	"/milestones",
+	milestoneSubmitRateLimiter,
+	validate({
+		body: milestoneSubmitBodySchema,
+	}),
 	submitMilestoneReport,
 )
