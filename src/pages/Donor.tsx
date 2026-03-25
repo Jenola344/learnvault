@@ -10,7 +10,7 @@ import { useWallet } from "../hooks/useWallet"
 
 const Donor: React.FC = () => {
 	const { address } = useWallet()
-	const { stats, contributions, votes, scholars, isLoading, error } = useDonor()
+	const { stats, contributions, votes, scholars, isLoading, error, isEmpty } = useDonor()
 	const [showDepositForm, setShowDepositForm] = useState(false)
 
 	// Guard: Not connected
