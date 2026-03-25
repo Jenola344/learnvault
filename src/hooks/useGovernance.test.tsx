@@ -60,6 +60,7 @@ function createWrapper(address?: string) {
 		address,
 		balances: {},
 		isPending: false,
+		isReconnecting: false,
 		signTransaction,
 		updateBalances: vi.fn(),
 	}
