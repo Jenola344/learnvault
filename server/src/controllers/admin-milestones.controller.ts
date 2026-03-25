@@ -19,8 +19,6 @@ export async function getPendingMilestones(
 	}
 }
 
-// ── GET /api/admin/milestones/:id ────────────────────────────────────────────
-
 export async function getMilestoneById(
 	req: Request,
 	res: Response,
@@ -44,8 +42,6 @@ export async function getMilestoneById(
 		res.status(500).json({ error: "Failed to fetch milestone report" })
 	}
 }
-
-// ── POST /api/admin/milestones/:id/approve ───────────────────────────────────
 
 export async function approveMilestone(
 	req: AdminRequest,
@@ -101,8 +97,6 @@ export async function approveMilestone(
 		res.status(500).json({ error: "Failed to approve milestone" })
 	}
 }
-
-// ── POST /api/admin/milestones/:id/reject ────────────────────────────────────
 
 const rejectBodySchema = z.object({
 	reason: z.string().min(1, "Rejection reason is required"),

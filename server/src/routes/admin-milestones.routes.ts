@@ -150,15 +150,15 @@ adminMilestonesRouter.post(
  *         application/json:
  *           schema:
  *             type: object
- *             required: [scholarAddress, courseId, milestoneId]
+ *             required: [scholarAddress, course_id, milestone_id]
  *             properties:
  *               scholarAddress:
  *                 type: string
- *               courseId:
+ *               course_id:
  *                 type: string
- *               milestoneId:
+ *               milestone_id:
  *                 type: integer
- *               evidenceGithub:
+ *               evidenceGitHub:
  *                 type: string
  *               evidenceIpfsCid:
  *                 type: string

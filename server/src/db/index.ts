@@ -1,9 +1,29 @@
-export type DbClient = {
-	connected: boolean
+import { Pool } from "pg"
+
+class MockPool {
+	async connect() {
+		return {
+			query: async () => ({ rows: [] }),
+			release: () => {},
+		}
+	}
+	async query(text: string, params?: any[]) {
+		return { rows: [] }
+	}
 }
 
-export const db: DbClient = {
-	connected: false,
+let activePool: any
+try {
+	activePool = new Pool({
+		connectionString: process.env.DATABASE_URL,
+		ssl:
+			process.env.NODE_ENV === "production"
+				? { rejectUnauthorized: false }
+				: false,
+	})
+} catch {
+	console.warn("[db] Failed to create postgres pool, using mock")
+	activePool = new MockPool()
 }
 
 export const pool = activePool

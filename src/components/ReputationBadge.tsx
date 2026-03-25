@@ -1,11 +1,11 @@
 import { useLearnToken } from "../hooks/useLearnToken"
 import { useWallet } from "../hooks/useWallet"
-import { formatLrnBalance } from "../util/scholarshipApplications"
 import {
 	getReputationRankFromLrn,
 	lrnBalanceToNumber,
 	type ReputationTier,
 } from "../util/reputationRank"
+import { formatLrnBalance } from "../util/scholarshipApplications"
 
 const TIER_STYLES: Record<
 	ReputationTier,
@@ -94,9 +94,7 @@ export function ReputationBadge({
 			>
 				<span className="h-2 w-2 rounded-full bg-white/20" />
 				<span className="h-3 w-16 rounded bg-white/10" />
-				{showBalance ? (
-					<span className="h-3 w-10 rounded bg-white/10" />
-				) : null}
+				{showBalance ? <span className="h-3 w-10 rounded bg-white/10" /> : null}
 			</div>
 		)
 	}

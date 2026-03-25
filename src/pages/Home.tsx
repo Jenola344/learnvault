@@ -68,6 +68,12 @@ const Home: React.FC = () => {
 						</Link>
 					</div>
 				</header>
+				<div className="flex justify-center mb-8">
+					<WalletAddressPill
+						address="GABC1234567890ABCDEFGHWXYZ"
+						showLink={true}
+					/>
+				</div>
 
 				<div className="flex justify-center mb-8">
 					<WalletAddressPill address="GABC1234567890ABCDEFGHWXYZ" showLink />

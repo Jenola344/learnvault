@@ -129,13 +129,13 @@ async function fetchActivityEvents(
 
 	const relevant = walletAddress
 		? events.filter((e) =>
-			JSON.stringify({
-				topic: e.topics ?? e.topic,
-				value: e.value,
-			})
-				.toLowerCase()
-				.includes(walletAddress.toLowerCase()),
-		)
+				JSON.stringify({
+					topic: e.topics ?? e.topic,
+					value: e.value,
+				})
+					.toLowerCase()
+					.includes(walletAddress.toLowerCase()),
+			)
 		: events
 
 	// Apply filter by event type

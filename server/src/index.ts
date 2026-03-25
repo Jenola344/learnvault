@@ -1,5 +1,4 @@
 import path from "node:path"
-
 import cors from "cors"
 import dotenv from "dotenv"
 import express from "express"
@@ -12,21 +11,21 @@ import { initDb } from "./db/index"
 import { createNonceStore } from "./db/nonce-store"
 import { errorHandler } from "./middleware/error.middleware"
 import { globalLimiter } from "./middleware/rate-limit.middleware"
+import { buildOpenApiSpec } from "./openapi"
+import { adminMilestonesRouter } from "./routes/admin-milestones.routes"
 import { createAuthRouter } from "./routes/auth.routes"
+import { commentsRouter } from "./routes/comments.routes"
+import { coursesRouter } from "./routes/courses.routes"
+import { eventsRouter } from "./routes/events.routes"
 import { healthRouter } from "./routes/health.routes"
 import { createMeRouter } from "./routes/me.routes"
+import { uploadRouter } from "./routes/upload.routes"
+import { validatorRouter } from "./routes/validator.routes"
 import { createAuthService } from "./services/auth.service"
 import {
 	createJwtService,
 	generateEphemeralDevJwtKeys,
 } from "./services/jwt.service"
-import { validatorRouter } from "./routes/validator.routes"
-import { commentsRouter } from "./routes/comments.routes"
-import { adminMilestonesRouter } from "./routes/admin-milestones.routes"
-import { uploadRouter } from "./routes/upload.routes"
-import { coursesRouter } from "./routes/courses.routes"
-import { eventsRouter } from "./routes/events.routes"
-import { buildOpenApiSpec } from "./openapi"
 
 // Load server/.env whether you run from repo root or from server/
 dotenv.config({ path: path.resolve(__dirname, "..", ".env") })
@@ -40,9 +39,9 @@ const envSchema = z.object({
 	PORT: z.coerce.number().int().positive().default(4000),
 	CORS_ORIGIN: z.string().default("http://localhost:5173"),
 	NODE_ENV: z.string().default("development"),
-	JWT_PRIVATE_KEY: pemString.optional(),
-	JWT_PUBLIC_KEY: pemString.optional(),
 	REDIS_URL: z.string().optional(),
+	JWT_PRIVATE_KEY: z.string().optional(),
+	JWT_PUBLIC_KEY: z.string().optional(),
 })
 
 const env = envSchema.parse(process.env)
@@ -71,17 +70,16 @@ const jwtService = createJwtService(jwtPrivateKey, jwtPublicKey)
 const authService = createAuthService(nonceStore, jwtService)
 
 const app = express()
-
 const openApiSpec = buildOpenApiSpec()
 const openApiYaml = YAML.stringify(openApiSpec)
 
 app.set("trust proxy", 1)
-
 app.use(morgan("dev"))
 app.use(cors({ origin: env.CORS_ORIGIN }))
 app.use(express.json())
 app.use(globalLimiter)
 
+// Routes
 app.use("/api", healthRouter)
 app.use("/api/auth", createAuthRouter(authService))
 app.use("/api", createMeRouter(jwtService))
@@ -94,27 +92,37 @@ app.use("/api", uploadRouter)
 
 // Start event poller (non-prod only for now)
 if (process.env.NODE_ENV !== "production") {
-  void import('./workers/event-poller.js').then(({ startEventPoller }) => {
-    void startEventPoller().catch(console.error)
-  })
+	void import("./workers/event-poller.js").then(({ startEventPoller }) => {
+		void startEventPoller().catch(console.error)
+	})
 }
 
 app.get("/api/docs", (_req, res) => {
 	res.type("application/yaml").send(openApiYaml)
 })
 
-if (process.env.NODE_ENV !== "production") {
+if (!isProduction) {
 	app.use("/api/docs/ui", swaggerUi.serve, swaggerUi.setup(openApiSpec))
 }
 
 app.use(errorHandler)
 
+initDb()
+	.then(() => {
+		app.listen(env.PORT, () => {
+			console.log(`Server listening on port ${env.PORT}`)
+		})
+	})
+	.catch((err) => {
+		console.error("Failed to initialize database:", err)
+		process.exit(1)
+	})
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  void import('./workers/event-poller.js').then(({ stopEventPoller }) => {
-    void stopEventPoller()
-  })
-  process.exit(0)
+process.on("SIGTERM", () => {
+	void import("./workers/event-poller.js").then(({ stopEventPoller }) => {
+		void stopEventPoller()
+	})
+	process.exit(0)
 })
 
 app.listen(env.PORT, () => {

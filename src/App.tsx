@@ -7,6 +7,8 @@ import CourseCard from "./components/CourseCard"
 import ErrorBoundary from "./components/ErrorBoundary"
 import Footer from "./components/Footer"
 import NavBar from "./components/NavBar"
+import { ToastProvider } from "./components/Toast/ToastProvider"
+import { WalletToastWatcher } from "./components/WalletToastWatcher"
 import { labPrefix } from "./contracts/util"
 import Admin from "./pages/Admin"
 import Courses from "./pages/Courses"
@@ -28,32 +30,35 @@ import Treasury from "./pages/Treasury"
 
 function App() {
 	return (
-		<Routes>
-			<Route element={<AppLayout />}>
-				<Route path="/" element={<Home />} />
-				<Route path="/courses" element={<Courses />} />
-				<Route
-					path="/courses/:courseId/lessons/:lessonId"
-					element={<LessonView />}
-				/>
-				<Route path="/learn" element={<Learn />} />
-				<Route path="/dao" element={<Dao />} />
-				<Route path="/dao/proposals" element={<DaoProposals />} />
-				<Route path="/dao/propose" element={<DaoPropose />} />
-				<Route path="/leaderboard" element={<Leaderboard />} />
-				<Route path="/profile" element={<Profile />} />
-				<Route path="/profile/:walletAddress" element={<Profile />} />
-				<Route path="/scholarships/apply" element={<ScholarshipApply />} />
-				<Route path="/admin" element={<Admin />} />
-				<Route path="/treasury" element={<Treasury />} />
-				<Route path="/donor" element={<Donor />} />
-				<Route path="/credentials/:nftId" element={<Credential />} />
-				<Route path="/dashboard" element={<Dashboard />} />
-				<Route path="/debug" element={<Debug />} />
-				<Route path="/debug/:contractName" element={<Debug />} />
-				<Route path="*" element={<NotFound />} />
-			</Route>
-		</Routes>
+		<ToastProvider>
+			<WalletToastWatcher />
+			<Routes>
+				<Route element={<AppLayout />}>
+					<Route path="/" element={<Home />} />
+					<Route path="/courses" element={<Courses />} />
+					<Route
+						path="/courses/:courseId/lessons/:lessonId"
+						element={<LessonView />}
+					/>
+					<Route path="/learn" element={<Learn />} />
+					<Route path="/dao" element={<Dao />} />
+					<Route path="/dao/proposals" element={<DaoProposals />} />
+					<Route path="/dao/propose" element={<DaoPropose />} />
+					<Route path="/leaderboard" element={<Leaderboard />} />
+					<Route path="/profile" element={<Profile />} />
+					<Route path="/profile/:walletAddress" element={<Profile />} />
+					<Route path="/scholarships/apply" element={<ScholarshipApply />} />
+					<Route path="/admin" element={<Admin />} />
+					<Route path="/treasury" element={<Treasury />} />
+					<Route path="/donor" element={<Donor />} />
+					<Route path="/credentials/:nftId" element={<Credential />} />
+					<Route path="/dashboard" element={<Dashboard />} />
+					<Route path="/debug" element={<Debug />} />
+					<Route path="/debug/:contractName" element={<Debug />} />
+					<Route path="*" element={<NotFound />} />
+				</Route>
+			</Routes>
+		</ToastProvider>
 	)
 }
 

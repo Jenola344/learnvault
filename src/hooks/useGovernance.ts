@@ -1,17 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
+import { useToast } from "../components/Toast/ToastProvider"
+import { type Proposal, type RawContractProposal } from "../types/governance"
 import { useWallet } from "./useWallet"
 
-export interface Proposal {
-	id: number
-	title: string
-	description: string
-	author: string
-	status: "Active" | "Passed" | "Rejected"
-	votesFor: bigint
-	votesAgainst: bigint
-	endDate: number // timestamp
-}
+export type { Proposal }
 
 const readEnv = (key: string): string | undefined => {
 	const value = (import.meta.env as Record<string, unknown>)[key]
@@ -29,6 +22,7 @@ const GOVERNANCE_TOKEN_CONTRACT = readEnv("PUBLIC_GOVERNANCE_TOKEN_CONTRACT")
 export function useGovernance() {
 	const { address, signTransaction } = useWallet()
 	const queryClient = useQueryClient()
+	const { showSuccess, showError } = useToast()
 
 	// Helper to load contract clients
 	const loadClient = useCallback(async (path: string) => {
@@ -76,7 +70,7 @@ export function useGovernance() {
 
 			const raw = await getProposalsFn()
 			// Transform contract response to Proposal interface
-			return (Array.isArray(raw) ? raw : []).map((p: any) => ({
+			return (Array.isArray(raw) ? raw : []).map((p: RawContractProposal) => ({
 				id: Number(p.id ?? 0),
 				title: String(p.title ?? ""),
 				description: String(p.description ?? ""),
@@ -188,6 +182,13 @@ export function useGovernance() {
 				["governance", "voted", proposalId, address],
 				true,
 			)
+			showSuccess("Vote submitted successfully!")
+		},
+
+		onError: (error: unknown) => {
+			const message =
+				error instanceof Error ? error.message : "Vote transaction failed"
+			showError(message)
 		},
 	})
 
