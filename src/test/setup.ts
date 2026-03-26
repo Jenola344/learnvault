@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render, type RenderOptions } from "@testing-library/react"
 import { createElement, type ReactElement, type ReactNode } from "react"
-import { vi } from "vitest"
+import { afterEach, vi } from "vitest"
 
 // Import our custom mocks
 import { mockContractImports } from "./mocks/contracts"
@@ -19,9 +19,22 @@ vi.mock("@creit.tech/stellar-wallets-kit", () => mockStellarWalletsKit)
 vi.mock("../util/wallet", () => mockWalletUtils)
 
 // Mock contract client dynamic imports
-Object.entries(mockContractImports).forEach(([path, mock]) => {
-	vi.mock(path, () => mock)
-})
+vi.mock(
+	"../contracts/learn_token",
+	() => mockContractImports["../contracts/learn_token"],
+)
+vi.mock(
+	"../contracts/governance_token",
+	() => mockContractImports["../contracts/governance_token"],
+)
+vi.mock(
+	"../contracts/scholarship_treasury",
+	() => mockContractImports["../contracts/scholarship_treasury"],
+)
+vi.mock(
+	"../contracts/guess_the_number",
+	() => mockContractImports["../contracts/guess_the_number"],
+)
 
 // Mock @stellar/design-system to avoid CSS import issues
 vi.mock("@stellar/design-system", () => ({
@@ -158,11 +171,10 @@ interface AllTheProvidersProps {
 
 const AllTheProviders = ({
 	children,
-	walletContext,
+	walletContext: _walletContext,
 	queryClient,
 }: AllTheProvidersProps) => {
 	const testQueryClient = queryClient || createTestQueryClient()
-	const mockWalletCtx = walletContext || createMockWalletContext()
 
 	return createElement(
 		QueryClientProvider,

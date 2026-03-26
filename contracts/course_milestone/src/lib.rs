@@ -2,11 +2,18 @@
 #![allow(deprecated)]
 
 use soroban_sdk::{
-    contract, contracterror, contractevent, contractimpl, contracttype, panic_with_error,
-    symbol_short, Address, Env, Symbol,
+    Address, Env, String, Symbol, Vec, contract, contracterror, contractimpl, contracttype,
+    panic_with_error, symbol_short,
 };
 
 #[contracttype]
+pub enum DataKey {
+    Enrollment(Address, String),
+    MilestoneState(Address, String, u32),
+    MilestoneSubmission(Address, String, u32),
+    EnrolledCourses(Address),
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub enum MilestoneStatus {
@@ -92,6 +99,16 @@ impl CourseMilestone {
         }
 
         env.storage().persistent().set(&key, &true);
+
+        let courses_key = DataKey::EnrolledCourses(learner.clone());
+        let mut courses: Vec<String> = env
+            .storage()
+            .persistent()
+            .get(&courses_key)
+            .unwrap_or_else(|| Vec::new(&env));
+        courses.push_back(course_id.clone());
+        env.storage().persistent().set(&courses_key, &courses);
+
         env.events().publish(
             (symbol_short!("enrolled"),),
             EnrolledEventData { learner, course_id },
@@ -171,6 +188,27 @@ impl CourseMilestone {
     ) -> Option<MilestoneSubmission> {
         let key = DataKey::MilestoneSubmission(learner, course_id, milestone_id);
         env.storage().persistent().get(&key)
+    }
+
+    pub fn get_milestone_status(
+        env: Env,
+        learner: Address,
+        course_id: String,
+        milestone_id: u32,
+    ) -> MilestoneStatus {
+        let key = DataKey::MilestoneState(learner, course_id, milestone_id);
+        env.storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or(MilestoneStatus::NotStarted)
+    }
+
+    pub fn get_enrolled_courses(env: Env, learner: Address) -> Vec<String> {
+        let key = DataKey::EnrolledCourses(learner);
+        env.storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or_else(|| Vec::new(&env))
     }
 
     pub fn get_version(env: Env) -> String {
