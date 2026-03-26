@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import { useParams, Navigate } from "react-router-dom"
 import LessonContent from "../components/LessonContent"
 import LessonSidebar from "../components/LessonSidebar"
+import MilestoneSubmitPanel from "../components/MilestoneSubmitPanel"
 import { courses } from "../data/courses"
 import { getCourseLessons, getLesson } from "../data/lessons"
 import { useCourse } from "../hooks/useCourse"
@@ -167,6 +168,15 @@ const LessonView: React.FC = () => {
 						nextLessonId={nextLessonId}
 						isNextLocked={isNextLocked}
 					/>
+
+					{lesson.isMilestone && !isLoadingContent && (
+						<div className="mt-12 animate-in fade-in slide-in-from-top-4 duration-1000">
+							<MilestoneSubmitPanel
+								courseId={course.id}
+								milestoneId={lesson.id}
+							/>
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
