@@ -12,6 +12,8 @@ const SCHOLAR_NFT_CONTRACT_ID = process.env.SCHOLAR_NFT_CONTRACT_ID ?? ""
 const SCHOLARSHIP_TREASURY_CONTRACT_ID =
 	process.env.SCHOLARSHIP_TREASURY_CONTRACT_ID ?? ""
 const LEARN_TOKEN_CONTRACT_ID = process.env.LEARN_TOKEN_CONTRACT_ID ?? ""
+const GOVERNANCE_TOKEN_CONTRACT_ID =
+	process.env.GOVERNANCE_TOKEN_CONTRACT_ID ?? ""
 
 export interface ContractCallResult {
 	txHash: string | null
@@ -507,6 +509,53 @@ async function getLearnTokenBalance(address: string): Promise<string> {
 	}
 }
 
+async function getGovernanceTokenBalance(address: string): Promise<string> {
+	if (!GOVERNANCE_TOKEN_CONTRACT_ID) {
+		console.warn(
+			"[stellar] GOVERNANCE_TOKEN_CONTRACT_ID not set — simulating balance",
+		)
+		return "1250000000"
+	}
+	try {
+		const { Contract, Address } = await import("@stellar/stellar-sdk")
+		const server = new (await import("@stellar/stellar-sdk")).rpc.Server(
+			STELLAR_NETWORK === "mainnet"
+				? "https://soroban-rpc.stellar.org"
+				: "https://soroban-testnet.stellar.org",
+		)
+		const contract = new Contract(GOVERNANCE_TOKEN_CONTRACT_ID)
+		const tx = new (await import("@stellar/stellar-sdk")).TransactionBuilder(
+			new (await import("@stellar/stellar-sdk")).Account(
+				"GDGQVOKHW4VEJRU2TETD6DBRKEO5ERCNF353LW5JBF3UKJQ2K5RQDD",
+				"0",
+			),
+			{
+				fee: "100",
+				networkPassphrase:
+					STELLAR_NETWORK === "mainnet"
+						? (await import("@stellar/stellar-sdk")).Networks.PUBLIC
+						: (await import("@stellar/stellar-sdk")).Networks.TESTNET,
+			},
+		)
+			.addOperation(contract.call("balance", new Address(address).toScVal()))
+			.setTimeout(30)
+			.build()
+
+		const simResult = await server.simulateTransaction(tx)
+		if (
+			(await import("@stellar/stellar-sdk")).rpc.Api.isSimulationError(
+				simResult,
+			)
+		)
+			return "0"
+		const { scValToNative } = await import("@stellar/stellar-sdk")
+		return scValToNative(simResult.result?.retval!).toString()
+	} catch (err) {
+		console.error("[stellar] getGovernanceTokenBalance failed:", err)
+		return "0"
+	}
+}
+
 async function getEnrolledCourses(address: string): Promise<string[]> {
 	if (!COURSE_MILESTONE_CONTRACT_ID) {
 		console.warn(
@@ -546,6 +595,7 @@ export const stellarContractService = {
 	isEnrolled,
 	submitScholarshipProposal,
 	getLearnTokenBalance,
+	getGovernanceTokenBalance,
 	getEnrolledCourses,
 	getScholarCredentials,
 }

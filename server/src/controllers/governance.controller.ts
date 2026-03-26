@@ -76,6 +76,39 @@ export async function getGovernanceProposals(
 	}
 }
 
+const GOV_DECIMALS = 7
+const GOV_DIVISOR = 10n ** BigInt(GOV_DECIMALS)
+
+export async function getVotingPower(
+	req: Request,
+	res: Response,
+): Promise<void> {
+	const { address } = req.params
+	if (!address || address.length < 50) {
+		res.status(400).json({ error: "Invalid Stellar address" })
+		return
+	}
+
+	try {
+		const rawBalance =
+			await stellarContractService.getGovernanceTokenBalance(address)
+		const balanceBigInt = BigInt(rawBalance)
+		const whole = balanceBigInt / GOV_DIVISOR
+		const frac = balanceBigInt % GOV_DIVISOR
+		const formatted = `${whole}.${frac.toString().padStart(GOV_DECIMALS, "0").slice(0, 2)}`
+
+		res.status(200).json({
+			address,
+			gov_balance: rawBalance,
+			formatted,
+			can_vote: balanceBigInt > 0n,
+		})
+	} catch (err) {
+		console.error("[governance] getVotingPower error:", err)
+		res.status(500).json({ error: "Failed to fetch voting power" })
+	}
+}
+
 const createProposalSchema = z.object({
 	author_address: z.string().min(50).max(56),
 	title: z.string().min(5).max(200),
