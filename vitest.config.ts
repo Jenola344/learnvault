@@ -8,6 +8,12 @@ export default defineConfig({
 		environment: "jsdom",
 		setupFiles: ["./src/test/setup.ts"],
 		include: ["src/**/*.test.{ts,tsx}"],
+		env: {
+			PUBLIC_SCHOLARSHIP_TREASURY_CONTRACT:
+				"CSCHOL1234567890ABCDEFGHIJKLMN9876543210ZYXWVUTSRQPO",
+			PUBLIC_GOVERNANCE_TOKEN_CONTRACT:
+				"CGOV1234567890ABCDEFGHIJKLMN9876543210ZYXWVUTSRQPO",
+		},
 		coverage: {
 			include: ["src/util/**"],
 			reporter: ["text", "lcov"],

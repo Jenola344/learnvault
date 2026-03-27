@@ -107,6 +107,16 @@ const mockEnv = {
 		"CGUESS1234567890ABCDEFGHIJKLMN9876543210ZYXWVUTSRQPO",
 }
 
+// Stub import.meta.env for modules that read contract addresses at load time
+vi.stubEnv(
+	"PUBLIC_SCHOLARSHIP_TREASURY_CONTRACT",
+	mockEnv.PUBLIC_SCHOLARSHIP_TREASURY_CONTRACT_ID,
+)
+vi.stubEnv(
+	"PUBLIC_GOVERNANCE_TOKEN_CONTRACT",
+	mockEnv.PUBLIC_GOVERNANCE_TOKEN_CONTRACT_ID,
+)
+
 Object.defineProperty(window, "import", {
 	value: {
 		meta: {
