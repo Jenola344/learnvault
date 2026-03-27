@@ -1,8 +1,8 @@
 extern crate std;
 
 use soroban_sdk::{
-    Address, Env, IntoVal, Val, Vec,
-    testutils::{Address as _, Ledger, LedgerInfo, MockAuth, MockAuthInvoke},
+    Address, Env, IntoVal, Val, Vec, Symbol, symbol_short,
+    testutils::{Address as _, Ledger, LedgerInfo, MockAuth, MockAuthInvoke, Events},
     token::{StellarAssetClient, TokenClient},
 };
 
@@ -116,6 +116,20 @@ fn initialize_sets_admin_and_treasury_on_created_escrow() {
 }
 
 #[test]
+fn create_escrow_emits_event() {
+    let (env, contract_id, _token, _admin, _treasury, scholar) = setup();
+    let client = MilestoneEscrowClient::new(&env, &contract_id);
+
+    create_escrow(&client, 123, &scholar, 200, 4);
+
+    let events = env.events().all();
+    let found = events.iter().any(|(cid, topics, _)| {
+        cid == contract_id && topics.contains(&Symbol::new(&env, "escrow_created").into_val(&env))
+    });
+    assert!(found, "escrow_created event not found");
+}
+
+#[test]
 fn create_escrow_locks_funds_and_rejects_duplicates() {
     let (env, contract_id, token, _admin, treasury, scholar) = setup();
     let client = MilestoneEscrowClient::new(&env, &contract_id);
@@ -207,6 +221,25 @@ fn reclaim_inactive_requires_admin_and_deadline() {
     assert_eq!(escrow.released_amount, 120);
     assert_eq!(token_client(&env, &token).balance(&treasury), 970);
     assert_eq!(token_client(&env, &token).balance(&contract_id), 0);
+}
+
+#[test]
+fn reclaim_inactive_emits_event() {
+    let (env, contract_id, _token, _admin, treasury, scholar) = setup();
+    let client = MilestoneEscrowClient::new(&env, &contract_id);
+
+    create_escrow(&client, 77, &scholar, 120, 4);
+    // Make it active so last_activity is set from a release
+    release_tranche_authorized(&client, 77).unwrap();
+
+    set_timestamp(&env, START_TS + THIRTY_DAYS);
+    reclaim_inactive_authorized(&client, 77).unwrap();
+
+    let events = env.events().all();
+    let found = events.iter().any(|(cid, topics, _)| {
+        cid == contract_id && topics.contains(&Symbol::new(&env, "escrow_reclaimed").into_val(&env))
+    });
+    assert!(found, "escrow_reclaimed event not found");
 }
 
 #[test]
