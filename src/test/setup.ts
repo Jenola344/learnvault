@@ -19,9 +19,61 @@ vi.mock("@creit.tech/stellar-wallets-kit", () => mockStellarWalletsKit)
 vi.mock("../util/wallet", () => mockWalletUtils)
 
 // Mock contract client dynamic imports
-Object.entries(mockContractImports).forEach(([path, mock]) => {
-	vi.mock(path, () => mock)
-})
+vi.mock("../contracts/learn_token", () => ({
+	default: {
+		balance: vi.fn().mockResolvedValue({ result: 1000n }),
+		mint: vi.fn().mockResolvedValue({ result: undefined }),
+		transfer: vi.fn().mockResolvedValue({ result: undefined }),
+		approve: vi.fn().mockResolvedValue({ result: undefined }),
+		allowance: vi.fn().mockResolvedValue({ result: 500n }),
+	},
+}))
+vi.mock("../contracts/governance_token", () => ({
+	default: {
+		balance: vi.fn().mockResolvedValue(0n),
+		vote: vi.fn().mockResolvedValue({ result: undefined }),
+		getProposal: vi.fn().mockResolvedValue({
+			result: {
+				title: "Test Proposal",
+				description: "Test Description",
+				yes_votes: 100n,
+				no_votes: 50n,
+			},
+		}),
+		getVotingPower: vi.fn().mockResolvedValue({ result: 1000n }),
+	},
+}))
+vi.mock("../contracts/scholarship_treasury", () => ({
+	default: {
+		apply: vi.fn().mockResolvedValue({ result: undefined }),
+		getApplication: vi.fn().mockResolvedValue({
+			result: {
+				applicant: "GTEST1234567890ABCDEFGHIJKLMN9876543210ZYXWVUTSRQPO",
+				status: "pending",
+			},
+		}),
+		withdraw: vi.fn().mockResolvedValue({ result: undefined }),
+		vote: vi.fn().mockResolvedValue({
+			signAndSend: vi.fn().mockResolvedValue({
+				result: { isErr: () => false, unwrap: () => undefined },
+			}),
+		}),
+		cast_vote: vi.fn().mockResolvedValue({ result: undefined }),
+		get_active_proposals: vi.fn().mockResolvedValue([]),
+		get_proposals_by_status: vi.fn().mockResolvedValue([]),
+		has_voted: vi.fn().mockResolvedValue(false),
+	},
+}))
+vi.mock("../contracts/guess_the_number", () => ({
+	default: {
+		guess: vi
+			.fn()
+			.mockResolvedValue({ result: { correct: true, reward: 100n } }),
+		getGameState: vi
+			.fn()
+			.mockResolvedValue({ result: { number: 42, reward_pool: 1000n } }),
+	},
+}))
 
 // Mock @stellar/design-system to avoid CSS import issues
 vi.mock("@stellar/design-system", () => ({
@@ -77,6 +129,16 @@ const mockEnv = {
 	PUBLIC_GUESS_THE_NUMBER_CONTRACT_ID:
 		"CGUESS1234567890ABCDEFGHIJKLMN9876543210ZYXWVUTSRQPO",
 }
+
+// Stub import.meta.env for modules that read contract addresses at load time
+vi.stubEnv(
+	"PUBLIC_SCHOLARSHIP_TREASURY_CONTRACT",
+	mockEnv.PUBLIC_SCHOLARSHIP_TREASURY_CONTRACT_ID,
+)
+vi.stubEnv(
+	"PUBLIC_GOVERNANCE_TOKEN_CONTRACT",
+	mockEnv.PUBLIC_GOVERNANCE_TOKEN_CONTRACT_ID,
+)
 
 Object.defineProperty(window, "import", {
 	value: {
