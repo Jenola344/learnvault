@@ -1,3 +1,10 @@
+#![no_std]
+
+#[soroban_sdk::contract]
+pub struct FungibleAllowlist;
+
+#[soroban_sdk::contractimpl]
+impl FungibleAllowlist {}
 use soroban_sdk::{
     Address, Env, Vec, contract, contracterror, contractimpl, contracttype, panic_with_error,
     symbol_short,

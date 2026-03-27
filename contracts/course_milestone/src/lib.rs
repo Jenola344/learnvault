@@ -2,8 +2,8 @@
 #![allow(deprecated)]
 
 use soroban_sdk::{
-    Address, Env, String, Symbol, Vec, contract, contracterror, contractevent, contractimpl,
-    contracttype, panic_with_error, symbol_short,
+    contract, contracterror, contractevent, contractimpl, contracttype, panic_with_error,
+    symbol_short, Address, Env, String, Symbol, Vec,
 };
 
 // ---------------------------------------------------------------------------
@@ -80,6 +80,9 @@ pub enum Error {
     CourseAlreadyComplete = 6,
     InvalidMilestones = 7,
     CourseAlreadyExists = 8,
+    NotEnrolled = 9,
+    DuplicateSubmission = 10,
+    ContractPaused = 11,
     AlreadyEnrolled = 9,
     NotEnrolled = 10,
     DuplicateSubmission = 11,
@@ -292,7 +295,7 @@ impl CourseMilestone {
         evidence_uri: String,
     ) {
         if Self::is_paused(env.clone()) {
-            panic!("Contract is paused");
+            panic_with_error!(&env, Error::ContractPaused);
         }
 
         Self::require_initialized(&env);
@@ -353,6 +356,15 @@ impl CourseMilestone {
         } else {
             MilestoneStatus::NotStarted
         }
+    }
+
+    pub fn get_milestone_status(
+        env: Env,
+        learner: Address,
+        course_id: String,
+        milestone_id: u32,
+    ) -> MilestoneStatus {
+        Self::get_milestone_state(env, learner, course_id, milestone_id)
     }
 
     pub fn get_milestone_submission(
