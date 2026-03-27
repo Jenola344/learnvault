@@ -378,11 +378,7 @@ async function isEnrolled(
 				STELLAR_NETWORK === "mainnet" ? Networks.PUBLIC : Networks.TESTNET,
 		})
 			.addOperation(
-				contract.call(
-					"is_enrolled",
-					learnerScVal,
-					xdr.ScVal.scvU32(courseId),
-				),
+				contract.call("is_enrolled", learnerScVal, xdr.ScVal.scvU32(courseId)),
 			)
 			.setTimeout(30)
 			.build()
@@ -598,7 +594,7 @@ async function getScholarCredentials(address: string): Promise<any[]> {
 			[address],
 		)
 
-		return result.rows.map(row => ({
+		return result.rows.map((row) => ({
 			token_id: Number(row.token_id),
 			course_id: row.course_id,
 			course_title: row.course_title || "Unknown Course",

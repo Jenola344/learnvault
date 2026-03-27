@@ -1,8 +1,8 @@
+import path from "path"
 import cors from "cors"
 import dotenv from "dotenv"
 import express from "express"
 import morgan from "morgan"
-import path from "path"
 import swaggerUi from "swagger-ui-express"
 import YAML from "yaml"
 import { z } from "zod"
@@ -31,8 +31,8 @@ import { createUploadRouter } from "./routes/upload.routes"
 import { validatorRouter } from "./routes/validator.routes"
 import { createAuthService } from "./services/auth.service"
 import {
-    createJwtService,
-    generateEphemeralDevJwtKeys,
+	createJwtService,
+	generateEphemeralDevJwtKeys,
 } from "./services/jwt.service"
 
 // Load server/.env whether you run from repo root or from server/
