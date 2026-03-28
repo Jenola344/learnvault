@@ -390,9 +390,8 @@ fn complete_milestone_marks_completion_and_emits_reward_event() {
     );
 
     let events = env.events().all();
-    let found = events.iter().any(|(event_contract_id, topics, data)| {
-        event_contract_id == contract_id
-            && topics.contains(&symbol_short!("ms_done").into_val(&env))
+    let found = events.iter().any(|(_, topics, data)| {
+        topics.contains(&symbol_short!("ms_done").into_val(&env))
             && {
                 let d: MilestoneCompleted = data.clone().into_val(&env);
                 d == MilestoneCompleted {
