@@ -317,7 +317,7 @@ async function callMintScholarNFT(
 				contract.call(
 					"mint",
 					new Address(scholarAddress).toScVal(),
-					xdr.ScVal.scvU64(tokenId),
+					xdr.ScVal.scvU64(new xdr.Uint64(tokenId)),
 				),
 			)
 			.setTimeout(30)
@@ -538,8 +538,7 @@ async function castVote(params: CastVoteParams): Promise<ContractCallResult> {
 	} catch (err) {
 		console.error("[stellar] Cast vote failed:", err)
 		throw new Error(
-			"Cast vote failed: " +
-				(err instanceof Error ? err.message : String(err)),
+			"Cast vote failed: " + (err instanceof Error ? err.message : String(err)),
 		)
 	}
 }
@@ -665,7 +664,15 @@ async function getScholarCredentials(address: string): Promise<any[]> {
 			[address],
 		)
 
-		return result.rows.map((row) => ({
+		type NftRow = {
+			token_id: string | number
+			course_id: string
+			course_title: string | null
+			metadata_uri: string | null
+			issued_at: Date
+			revoked: boolean
+		}
+		return result.rows.map((row: NftRow) => ({
 			token_id: Number(row.token_id),
 			course_id: row.course_id,
 			course_title: row.course_title || "Unknown Course",

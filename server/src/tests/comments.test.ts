@@ -3,9 +3,22 @@ import jwt from "jsonwebtoken"
 import request from "supertest"
 import { pool } from "../db/index"
 import { errorHandler } from "../middleware/error.middleware"
-import { commentsRouter } from "../routes/comments.routes"
+import { createCommentsRouter } from "../routes/comments.routes"
 
 const JWT_SECRET = "learnvault-secret"
+
+const testJwtService = {
+	signWalletToken: (addr: string) => jwt.sign({ sub: addr }, JWT_SECRET),
+	verifyWalletToken: (token: string) => {
+		const d = jwt.verify(token, JWT_SECRET) as {
+			sub?: string
+			address?: string
+		}
+		const sub = d.sub ?? d.address ?? ""
+		if (!sub) throw new Error("Invalid token")
+		return { sub }
+	},
+}
 
 function makeToken(address = "GUSER123") {
 	return jwt.sign({ address }, JWT_SECRET, { expiresIn: "1h" })
@@ -14,7 +27,7 @@ function makeToken(address = "GUSER123") {
 function buildApp() {
 	const app = express()
 	app.use(express.json())
-	app.use("/api", commentsRouter)
+	app.use("/api", createCommentsRouter(testJwtService))
 	app.use(errorHandler)
 	return app
 }
@@ -54,6 +67,7 @@ describe("POST /api/comments", () => {
 	it("accepts the issue payload shape when the author matches the token", async () => {
 		querySpy
 			.mockResolvedValueOnce({ rows: [{ count: "0" }] } as never)
+			.mockResolvedValueOnce({ rows: [{ count: "0" }] } as never)
 			.mockResolvedValueOnce({
 				rows: [
 					{
@@ -77,5 +91,30 @@ describe("POST /api/comments", () => {
 		expect(res.status).toBe(201)
 		expect(res.body.author_address).toBe("GUSER123")
 		expect(res.body.content).toBe("Nice proposal")
+	})
+
+	it("enforces a global per-address daily comment limit", async () => {
+		const previousMax = process.env.MAX_COMMENTS_PER_DAY
+		process.env.MAX_COMMENTS_PER_DAY = "1"
+
+		querySpy.mockResolvedValueOnce({ rows: [{ count: "1" }] } as never)
+
+		const res = await request(buildApp())
+			.post("/api/comments")
+			.set("Authorization", `Bearer ${makeToken()}`)
+			.send({
+				proposal_id: "proposal-1",
+				body: "Another comment",
+				author_address: "GUSER123",
+			})
+
+		expect(res.status).toBe(429)
+		expect(res.body.error).toBe("Global daily comment limit reached")
+
+		if (previousMax === undefined) {
+			delete process.env.MAX_COMMENTS_PER_DAY
+		} else {
+			process.env.MAX_COMMENTS_PER_DAY = previousMax
+		}
 	})
 })

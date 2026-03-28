@@ -34,23 +34,6 @@ vi.mock("../contracts/scholarship_treasury", () => ({
 vi.mock("../contracts/guess_the_number", () => ({
 	default: mockContracts.guessTheNumber,
 }))
-// Mock contract client dynamic imports
-vi.mock(
-	"../contracts/learn_token",
-	() => mockContractImports["../contracts/learn_token"],
-)
-vi.mock(
-	"../contracts/governance_token",
-	() => mockContractImports["../contracts/governance_token"],
-)
-vi.mock(
-	"../contracts/scholarship_treasury",
-	() => mockContractImports["../contracts/scholarship_treasury"],
-)
-vi.mock(
-	"../contracts/guess_the_number",
-	() => mockContractImports["../contracts/guess_the_number"],
-)
 
 // Mock @stellar/design-system to avoid CSS import issues
 vi.mock("@stellar/design-system", () => ({
