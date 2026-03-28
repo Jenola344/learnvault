@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query"
 import { Contract, rpc, xdr } from "@stellar/stellar-sdk"
-import { networkPassphrase, rpcUrl } from "../contracts/util"
+import { useQuery } from "@tanstack/react-query"
 import { CONTRACT_IDS } from "../constants/contracts"
+import { networkPassphrase, rpcUrl } from "../contracts/util"
 import { getIpfsUrl, normaliseCid, isCid } from "../lib/ipfs"
 
 // ---------------------------------------------------------------------------

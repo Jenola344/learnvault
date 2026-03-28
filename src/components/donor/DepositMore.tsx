@@ -1,6 +1,6 @@
 import React, { useState } from "react"
-import { useToast } from "../Toast/ToastProvider"
 import { useWallet } from "../../hooks/useWallet"
+import { useToast } from "../Toast/ToastProvider"
 
 interface DepositMoreProps {
 	onDepositSuccess?: () => void
