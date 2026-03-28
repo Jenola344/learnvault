@@ -383,12 +383,6 @@ fn complete_milestone_marks_completion_and_emits_reward_event() {
     );
     client.complete_milestone(&learner, &course_id, &2);
 
-    assert!(client.is_completed(&learner, &course_id, &2));
-    assert_eq!(
-        client.get_milestone_status(&learner, &course_id, &2),
-        MilestoneStatus::Approved
-    );
-
     let events = env.events().all();
     let found = events.iter().any(|(_, topics, data)| {
         topics.contains(&symbol_short!("ms_done").into_val(&env))
@@ -402,8 +396,13 @@ fn complete_milestone_marks_completion_and_emits_reward_event() {
                 }
             }
     });
-
     assert!(found, "completion event with reward was not emitted");
+
+    assert!(client.is_completed(&learner, &course_id, &2));
+    assert_eq!(
+        client.get_milestone_status(&learner, &course_id, &2),
+        MilestoneStatus::Approved
+    );
 }
 
 #[test]
