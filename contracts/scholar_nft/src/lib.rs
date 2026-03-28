@@ -141,12 +141,9 @@ impl ScholarNFT {
         token_id
     }
 
-    pub fn revoke(env: Env, admin: Address, token_id: u64, reason: String) {
+    pub fn revoke(env: Env, token_id: u64, reason: String) {
+        let admin = Self::get_admin(&env);
         admin.require_auth();
-        let stored_admin = Self::get_admin(&env);
-        if admin != stored_admin {
-            panic_with_error!(&env, ScholarNFTError::Unauthorized);
-        }
 
         let owner_key = DataKey::Owner(token_id);
         if !env.storage().persistent().has(&owner_key) {
@@ -168,22 +165,22 @@ impl ScholarNFT {
     }
 
     pub fn transfer_admin(env: Env, new_admin: Address) {
-    let old_admin = Self::get_admin(&env);
-    old_admin.require_auth();
+        let old_admin = Self::get_admin(&env);
+        old_admin.require_auth();
 
-    env.storage().instance().set(&ADMIN_KEY, &new_admin);
-    env.storage().instance().set(&DataKey::Admin, &new_admin);
+        env.storage().instance().set(&ADMIN_KEY, &new_admin);
+        env.storage().instance().set(&DataKey::Admin, &new_admin);
 
-    env.events().publish(
-        (symbol_short!("adm_chng"),),
-        AdminChangedEventData {
-            old_admin,
-            new_admin,
-        },
-    );
+        env.events().publish(
+            (symbol_short!("adm_chng"),),
+            AdminChangedEventData {
+                old_admin,
+                new_admin,
+            },
+        );
 
-    Self::extend_instance(&env);
-}
+        Self::extend_instance(&env);
+    }
 
     pub fn token_uri(env: Env, token_id: u64) -> String {
         let key = DataKey::TokenUri(token_id);
