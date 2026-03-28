@@ -62,6 +62,13 @@ pub struct RevokedEventData {
     pub reason: String,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct AdminChangedEventData {
+    pub old_admin: Address,
+    pub new_admin: Address,
+}
+
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
@@ -159,6 +166,24 @@ impl ScholarNFT {
             RevokedEventData { token_id, reason },
         );
     }
+
+    pub fn transfer_admin(env: Env, new_admin: Address) {
+    let old_admin = Self::get_admin(&env);
+    old_admin.require_auth();
+
+    env.storage().instance().set(&ADMIN_KEY, &new_admin);
+    env.storage().instance().set(&DataKey::Admin, &new_admin);
+
+    env.events().publish(
+        (symbol_short!("adm_chng"),),
+        AdminChangedEventData {
+            old_admin,
+            new_admin,
+        },
+    );
+
+    Self::extend_instance(&env);
+}
 
     pub fn token_uri(env: Env, token_id: u64) -> String {
         let key = DataKey::TokenUri(token_id);
