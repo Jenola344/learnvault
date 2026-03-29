@@ -1,11 +1,11 @@
 #![cfg(test)]
 
 use crate::{
-    AdminChangedEventData, DataKey, InitializedEventData, MintEventData, ScholarNFT,
-    ScholarNFTClient, ScholarNFTError,
+    AdminChangedEventData, DataKey, InitializedEventData, MintEventData, ScholarMetadata,
+    ScholarNFT, ScholarNFTClient, ScholarNFTError,
 };
 use soroban_sdk::{
-    Address, Env, IntoVal, String, symbol_short,
+    Address, BytesN, Env, IntoVal, String, symbol_short,
     testutils::{Address as _, Events as _, MockAuth, MockAuthInvoke, storage::Persistent},
 };
 
@@ -20,6 +20,18 @@ fn setup(env: &Env) -> (Address, Address, ScholarNFTClient) {
 
 fn cid(env: &Env, value: &str) -> String {
     String::from_str(env, value)
+}
+
+fn authorize_upgrade(env: &Env, contract_id: &Address, signer: &Address, wasm_hash: &BytesN<32>) {
+    env.mock_auths(&[MockAuth {
+        address: signer,
+        invoke: &MockAuthInvoke {
+            contract: contract_id,
+            fn_name: "upgrade",
+            args: (wasm_hash.clone(),).into_val(env),
+            sub_invokes: &[],
+        },
+    }]);
 }
 
 #[test]
@@ -447,4 +459,56 @@ fn test_mint_extends_ttl() {
                 >= 6_307_200
         );
     });
+}
+
+#[test]
+fn upgrade_requires_admin_auth() {
+    let env = Env::default();
+    let admin = Address::generate(&env);
+    let attacker = Address::generate(&env);
+    let contract_id = env.register(ScholarNFT, ());
+    let client = ScholarNFTClient::new(&env, &contract_id);
+
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &contract_id,
+            fn_name: "initialize",
+            args: (&admin,).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin);
+
+    let wasm_hash = crate::upgrade::testutils::upload_upgrade_target(&env);
+    authorize_upgrade(&env, &contract_id, &attacker, &wasm_hash);
+    assert!(client.try_upgrade(&wasm_hash).is_err());
+}
+
+#[test]
+fn state_persists_after_upgrade() {
+    let env = Env::default();
+    let (contract_id, admin, client) = setup(&env);
+    let scholar = Address::generate(&env);
+    let metadata_uri = cid(&env, "ipfs://upgrade-check");
+
+    env.mock_all_auths();
+    let token_id = client.mint(&scholar, &metadata_uri);
+
+    env.set_auths(&[]);
+    let wasm_hash = crate::upgrade::testutils::upload_upgrade_target(&env);
+    authorize_upgrade(&env, &contract_id, &admin, &wasm_hash);
+    client.upgrade(&wasm_hash);
+
+    let metadata = env.as_contract(&contract_id, || {
+        env.storage()
+            .persistent()
+            .get::<_, ScholarMetadata>(&DataKey::Metadata(token_id))
+    });
+    let stored_hash = env.as_contract(&contract_id, || crate::upgrade::current_hash(&env));
+
+    let metadata = metadata.expect("metadata should persist across upgrades");
+    assert_eq!(metadata.owner, scholar);
+    assert_eq!(metadata.metadata_uri, metadata_uri);
+    assert_eq!(stored_hash, wasm_hash);
 }

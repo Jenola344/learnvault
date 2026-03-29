@@ -6,7 +6,10 @@ use soroban_sdk::{
     token::{StellarAssetClient, TokenClient},
 };
 
-use crate::{Error, ProposalStatus, ScholarshipTreasury, ScholarshipTreasuryClient, token};
+use crate::{
+    DataKey, Error, Proposal, ProposalStatus, ScholarshipTreasury, ScholarshipTreasuryClient,
+    token,
+};
 
 const DEFAULT_QUORUM: i128 = 1;
 const DEFAULT_APPROVAL_BPS: u32 = 5_000;
@@ -1879,4 +1882,43 @@ fn cancel_proposal_prevents_vote_and_execute() {
             Error::ProposalCancelled as u32
         )))
     );
+}
+
+#[test]
+fn upgrade_requires_admin_auth() {
+    let env = Env::default();
+    let (client, _governance, _donor, _recipient, _token_id, _gov_client, _admin) =
+        setup_with_admin(&env);
+    let attacker = Address::generate(&env);
+    let wasm_hash = crate::upgrade::testutils::upload_upgrade_target(&env);
+
+    set_caller(&client, "upgrade", &attacker, (wasm_hash.clone(),));
+    assert!(client.try_upgrade(&wasm_hash).is_err());
+}
+
+#[test]
+fn state_persists_after_upgrade() {
+    let env = Env::default();
+    let (client, _governance, donor, _recipient, _token_id, _gov_client, admin) =
+        setup_with_admin(&env);
+
+    env.mock_all_auths();
+    let proposal_id = submit_sample_proposal(&env, &client, &donor, 250);
+
+    let wasm_hash = crate::upgrade::testutils::upload_upgrade_target(&env);
+    set_caller(&client, "upgrade", &admin, (wasm_hash.clone(),));
+    client.upgrade(&wasm_hash);
+
+    let proposal = env.as_contract(&client.address, || {
+        env.storage()
+            .persistent()
+            .get::<_, Proposal>(&DataKey::Proposal(proposal_id))
+    });
+    let stored_hash = env.as_contract(&client.address, || crate::upgrade::current_hash(&env));
+
+    let proposal = proposal.expect("proposal should remain after upgrade");
+    assert_eq!(proposal.id, proposal_id);
+    assert_eq!(proposal.applicant, donor);
+    assert_eq!(proposal.amount, 250);
+    assert_eq!(stored_hash, wasm_hash);
 }

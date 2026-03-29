@@ -2,9 +2,14 @@
 #![allow(deprecated)]
 
 use soroban_sdk::{
-    Address, Env, String, Symbol, Vec, contract, contracterror, contractimpl, contracttype,
-    panic_with_error, symbol_short,
+    Address, BytesN, Env, String, Symbol, Vec, contract, contracterror, contractimpl,
+    contracttype, panic_with_error, symbol_short,
 };
+
+#[path = "../../shared/upgrade.rs"]
+mod upgrade;
+
+pub use upgrade::ContractUpgraded;
 
 const DAY_IN_LEDGERS: u32 = 17_280;
 const INSTANCE_BUMP_THRESHOLD: u32 = DAY_IN_LEDGERS;
@@ -95,6 +100,7 @@ impl ScholarNFT {
         }
         admin.require_auth();
         env.storage().instance().set(&ADMIN_KEY, &admin);
+        upgrade::init(&env);
         env.storage().instance().set(&TOKEN_COUNTER_KEY, &0_u64);
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Counter, &0_u64);
@@ -250,6 +256,13 @@ impl ScholarNFT {
             Self::extend_persistent(&env, &key);
         }
         scholars
+    }
+
+    /// Replace the current contract WASM with a new uploaded hash. Admin only.
+    pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) {
+        let admin = Self::get_admin(&env);
+        admin.require_auth();
+        upgrade::apply(&env, &admin, &new_wasm_hash);
     }
 
     pub fn transfer(env: Env, from: Address, to: Address, token_id: u64) {

@@ -2,7 +2,8 @@
 #![allow(deprecated)]
 
 use soroban_sdk::{
-    Address, Env, String, Symbol, Vec, contract, contracterror, contractimpl, contracttype,
+    Address, BytesN, Env, String, Symbol, Vec, contract, contracterror, contractimpl,
+    contracttype,
     panic_with_error, symbol_short,
 };
 
@@ -18,6 +19,11 @@ pub struct VerifyBatchEntry {
 
 mod interface;
 use interface::LearnTokenClient;
+
+#[path = "../../shared/upgrade.rs"]
+mod upgrade;
+
+pub use upgrade::ContractUpgraded;
 
 const DAY_IN_LEDGERS: u32 = 17_280;
 const INSTANCE_BUMP_THRESHOLD: u32 = DAY_IN_LEDGERS;
@@ -135,6 +141,7 @@ impl CourseMilestone {
         }
         admin.require_auth();
         env.storage().instance().set(&ADMIN_KEY, &admin);
+        upgrade::init(&env);
         env.storage()
             .instance()
             .set(&LEARN_TOKEN_KEY, &learn_token_contract);
@@ -491,6 +498,15 @@ impl CourseMilestone {
             Self::extend_persistent(&env, &completed_key);
         }
         completed
+    }
+
+    /// Replace the current contract WASM with a new uploaded hash. Admin only.
+    pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) {
+        Self::require_initialized(&env);
+        Self::extend_instance(&env);
+        let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
+        admin.require_auth();
+        upgrade::apply(&env, &admin, &new_wasm_hash);
     }
 
     pub fn get_version(env: Env) -> String {

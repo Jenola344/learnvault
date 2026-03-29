@@ -1,14 +1,14 @@
 extern crate std;
 
 use soroban_sdk::{
-    Address, Env, IntoVal, String, Symbol, Val, Vec, contract, contractimpl, contracttype,
-    symbol_short,
+    Address, BytesN, Env, IntoVal, String, Symbol, Val, Vec, contract, contractimpl,
+    contracttype, symbol_short,
     testutils::{Address as _, Events as _, MockAuth, MockAuthInvoke},
 };
 
 use crate::{
     CourseCompleted, CourseConfig, CourseMilestone, CourseMilestoneClient, DataKey, Error,
-    MilestoneCompleted, MilestoneStatus,
+    MilestoneCompleted, MilestoneStatus, VerifyBatchEntry,
 };
 
 #[contracttype]
@@ -650,7 +650,6 @@ fn batch_verify_milestones_happy_path() {
             lrn_reward: 200,
         },
     ];
-
     authorize(
         &env,
         &admin,
@@ -724,4 +723,65 @@ fn batch_verify_milestones_reverts_on_invalid_entry() {
     );
     // And no tokens were minted
     assert_eq!(token_client.balance(&learner1), 0);
+}
+
+#[test]
+fn upgrade_requires_admin_auth() {
+    let (env, contract_id, _admin, _token_id, client, _token_client) = setup();
+    let attacker = Address::generate(&env);
+    let wasm_hash: BytesN<32> = crate::upgrade::testutils::upload_upgrade_target(&env);
+
+    authorize(
+        &env,
+        &attacker,
+        &contract_id,
+        "upgrade",
+        (wasm_hash.clone(),),
+    );
+    let result = client.try_upgrade(&wasm_hash);
+
+    assert!(result.is_err());
+}
+
+#[test]
+fn state_persists_after_upgrade() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
+    let learner = Address::generate(&env);
+    let course_id = sid(&env, "soroban-101");
+
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner, &client, &course_id);
+
+    let wasm_hash = crate::upgrade::testutils::upload_upgrade_target(&env);
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "upgrade",
+        (wasm_hash.clone(),),
+    );
+    client.upgrade(&wasm_hash);
+
+    let stored_course = env.as_contract(&contract_id, || {
+        env.storage()
+            .persistent()
+            .get::<_, CourseConfig>(&DataKey::Course(course_id.clone()))
+    });
+    let enrolled = env.as_contract(&contract_id, || {
+        env.storage()
+            .persistent()
+            .get::<_, bool>(&DataKey::Enrollment(learner.clone(), course_id.clone()))
+            .unwrap_or(false)
+    });
+    let stored_hash = env.as_contract(&contract_id, || crate::upgrade::current_hash(&env));
+
+    assert_eq!(
+        stored_course,
+        Some(CourseConfig {
+            milestone_count: 3,
+            active: true,
+        })
+    );
+    assert!(enrolled);
+    assert_eq!(stored_hash, wasm_hash);
 }
