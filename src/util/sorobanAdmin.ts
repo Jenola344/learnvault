@@ -45,8 +45,9 @@ function toArray<T>(value: unknown): T[] {
 		typeof maybeVector.get === "function"
 	) {
 		const length = Number(maybeVector.length())
-		return Array.from({ length: Number.isFinite(length) ? length : 0 }, (_, i) =>
-			maybeVector.get!(i),
+		return Array.from(
+			{ length: Number.isFinite(length) ? length : 0 },
+			(_, i) => maybeVector.get!(i),
 		)
 	}
 
@@ -97,7 +98,9 @@ function extractInstanceStorage(contractDataEntry: AnyRecord): unknown[] {
 	return toArray(instanceValue.storage())
 }
 
-function readStorageEntryValue(entry: unknown): { key: string; value: unknown } | null {
+function readStorageEntryValue(
+	entry: unknown,
+): { key: string; value: unknown } | null {
 	if (!entry || typeof entry !== "object") return null
 
 	const record = entry as AnyRecord
@@ -267,8 +270,13 @@ export async function invokeContractMethod(options: {
 	signTransaction: WalletSignTransaction
 	args?: xdr.ScVal[]
 }): Promise<string> {
-	const { contractId, methodName, sourceAddress, signTransaction, args = [] } =
-		options
+	const {
+		contractId,
+		methodName,
+		sourceAddress,
+		signTransaction,
+		args = [],
+	} = options
 
 	if (!signTransaction) {
 		throw new Error("Wallet does not support signing")
@@ -292,9 +300,13 @@ export async function invokeContractMethod(options: {
 	)
 
 	if (response.status === "ERROR") {
+		const errorResult =
+			typeof response.errorResult === "string"
+				? response.errorResult
+				: undefined
 		throw new Error(
-			response.errorResultXdr
-				? `Transaction failed: ${response.errorResultXdr}`
+			errorResult
+				? `Transaction failed: ${errorResult}`
 				: "Transaction failed to submit",
 		)
 	}

@@ -1,6 +1,8 @@
 import { type NextFunction, type Request, type Response } from "express"
 import jwt from "jsonwebtoken"
 
+const DEFAULT_NON_PROD_JWT_SECRET = "learnvault-secret"
+
 type TokenPayload = {
 	sub?: string
 	address?: string
@@ -14,7 +16,10 @@ function getJwtPublicKey(): string | undefined {
 
 function getJwtSecret(): string | undefined {
 	const secret = process.env.JWT_SECRET?.trim()
-	return secret || undefined
+	if (secret) return secret
+	if (process.env.NODE_ENV === "production") return undefined
+
+	return DEFAULT_NON_PROD_JWT_SECRET
 }
 
 function getAdminApiKey(): string | undefined {
