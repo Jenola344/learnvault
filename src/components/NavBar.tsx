@@ -65,7 +65,6 @@ export default function NavBar() {
 				</nav>
 
 				<div className="flex items-center gap-3 md:gap-4">
-					{/* THEME TOGGLE INTEGRATED HERE */}
 					<ThemeToggle />
 					
 					<ReputationBadge
@@ -101,7 +100,6 @@ export default function NavBar() {
 				</div>
 			</div>
 
-			{/* MOBILE MENU */}
 			<div
 				className={`md:hidden ${menuOpen ? "pointer-events-auto" : "pointer-events-none"}`}
 			>
