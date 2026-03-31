@@ -1,8 +1,10 @@
 import { type Api } from "@stellar/stellar-sdk/rpc"
+import type { LearnTokenInfo } from "../types/contracts"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import { useToast } from "../components/Toast/ToastProvider"
 import { ErrorCode, createAppError } from "../types/errors"
+import { logger } from "../utils/logger"
 import { parseError, isUserRejection } from "../utils/errors"
 import { useContractIds } from "./useContractIds"
 import { useSubscription } from "./useSubscription"
@@ -23,7 +25,7 @@ const generatedContractModules = import.meta.glob("../contracts/*.ts")
 const loadLearnTokenClient = async (): Promise<ContractRecord | null> => {
 	const moduleLoader = generatedContractModules["../contracts/learn_token.ts"]
 	if (!moduleLoader) {
-		console.warn(
+		logger.warn(
 			createAppError(
 				ErrorCode.CONTRACT_NOT_DEPLOYED,
 				"LearnToken contract module not found",
@@ -38,7 +40,7 @@ const loadLearnTokenClient = async (): Promise<ContractRecord | null> => {
 
 		return (mod.default as ContractRecord) ?? mod
 	} catch (err) {
-		console.warn(
+		logger.warn(
 			createAppError(
 				ErrorCode.CONTRACT_NOT_DEPLOYED,
 				"Failed to load LearnToken contract",
@@ -153,7 +155,7 @@ export function useLearnToken(address?: string): UseLearnTokenResult {
 				const raw = await fn({})
 				const version = String(unwrapResult(raw) ?? "")
 				if (version && version !== EXPECTED_CONTRACT_VERSION) {
-					console.warn(
+					logger.warn(
 						`[LearnToken] Version mismatch: expected ${EXPECTED_CONTRACT_VERSION}, got ${version}. ` +
 							"Client bindings may be out of date.",
 					)

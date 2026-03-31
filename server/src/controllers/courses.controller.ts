@@ -12,6 +12,7 @@ type CourseRow = {
 	published_at: string | null
 	created_at: string
 	updated_at: string
+	students_count: number
 }
 
 type LessonRow = {
@@ -20,6 +21,7 @@ type LessonRow = {
 	title: string
 	content_markdown: string
 	order_index: number
+	is_milestone: boolean
 	created_at: string
 	updated_at: string
 	quiz: Array<{
@@ -40,6 +42,7 @@ const toCourse = (row: CourseRow) => ({
 	published: Boolean(row.published_at),
 	createdAt: row.created_at,
 	updatedAt: row.updated_at,
+	studentsCount: Number(row.students_count ?? 0),
 })
 
 const toLesson = (row: LessonRow) => ({
@@ -48,6 +51,7 @@ const toLesson = (row: LessonRow) => ({
 	title: row.title,
 	content: row.content_markdown,
 	order: row.order_index,
+	isMilestone: row.is_milestone,
 	quiz: row.quiz ?? [],
 	createdAt: row.created_at,
 	updatedAt: row.updated_at,
@@ -62,6 +66,11 @@ export const getCourses = async (
 	try {
 		const track =
 			typeof req.query.track === "string" ? req.query.track.trim() : undefined
+		const includeUnpublished =
+			typeof req.query.includeUnpublished === "string" &&
+			["1", "true", "yes"].includes(
+				req.query.includeUnpublished.trim().toLowerCase(),
+			)
 		const difficulty =
 			typeof req.query.difficulty === "string"
 				? req.query.difficulty.trim().toLowerCase()
@@ -102,12 +111,16 @@ export const getCourses = async (
 			offset = (page - 1) * limit
 		}
 
-		const conditions: string[] = ["published_at IS NOT NULL"]
+		const conditions: string[] = []
 		const params: unknown[] = []
+
+		if (!includeUnpublished) {
+			conditions.push("c.published_at IS NOT NULL")
+		}
 
 		if (track) {
 			params.push(track)
-			conditions.push(`LOWER(track) = LOWER($${params.length})`)
+			conditions.push(`LOWER(c.track) = LOWER($${params.length})`)
 		}
 
 		if (difficulty) {
@@ -122,13 +135,14 @@ export const getCourses = async (
 				return
 			}
 			params.push(difficulty)
-			conditions.push(`difficulty = $${params.length}`)
+			conditions.push(`c.difficulty = $${params.length}`)
 		}
 
-		const whereClause = `WHERE ${conditions.join(" AND ")}`
+		const whereClause =
+			conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : ""
 
 		const totalResult = (await pool.query(
-			`SELECT COUNT(*) AS count FROM courses ${whereClause}`,
+			`SELECT COUNT(*) AS count FROM courses c ${whereClause}`,
 			params,
 		)) as { rows: Array<{ count: string }> }
 		const total = Number.parseInt(totalResult.rows[0]?.count ?? "0", 10)
@@ -137,10 +151,23 @@ export const getCourses = async (
 		params.push(limit)
 		params.push(offset)
 		const rowsResult = (await pool.query(
-			`SELECT id, slug, title, description, cover_image_url, track, difficulty, published_at, created_at, updated_at
-			 FROM courses
+			`SELECT
+				c.id,
+				c.slug,
+				c.title,
+				c.description,
+				c.cover_image_url,
+				c.track,
+				c.difficulty,
+				c.published_at,
+				c.created_at,
+				c.updated_at,
+				COUNT(DISTINCT e.learner_address)::int AS students_count
+			 FROM courses c
+			 LEFT JOIN enrollments e ON e.course_id = c.slug
 			 ${whereClause}
-			 ORDER BY created_at DESC
+			 GROUP BY c.id, c.slug, c.title, c.description, c.cover_image_url, c.track, c.difficulty, c.published_at, c.created_at, c.updated_at
+			 ORDER BY c.created_at DESC
 			 LIMIT $${params.length - 1} OFFSET $${params.length}`,
 			params,
 		)) as { rows: CourseRow[] }
@@ -189,6 +216,7 @@ export const getCourse = async (req: Request, res: Response): Promise<void> => {
 				l.title,
 				l.content_markdown,
 				l.order_index,
+				BOOL_OR(m.id IS NOT NULL) AS is_milestone,
 				l.created_at,
 				l.updated_at,
 				COALESCE(
@@ -203,6 +231,7 @@ export const getCourse = async (req: Request, res: Response): Promise<void> => {
 					'[]'::json
 				) AS quiz
 			 FROM lessons l
+			 LEFT JOIN milestones m ON m.lesson_id = l.id
 			 LEFT JOIN quizzes q ON q.lesson_id = l.id
 			 LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
 			 WHERE l.course_id = $1
@@ -241,6 +270,7 @@ export const getCourseLessonById = async (
 				l.title,
 				l.content_markdown,
 				l.order_index,
+				BOOL_OR(m.id IS NOT NULL) AS is_milestone,
 				l.created_at,
 				l.updated_at,
 				COALESCE(
@@ -256,6 +286,7 @@ export const getCourseLessonById = async (
 				) AS quiz
 			 FROM lessons l
 			 INNER JOIN courses c ON c.id = l.course_id
+			 LEFT JOIN milestones m ON m.lesson_id = l.id
 			 LEFT JOIN quizzes q ON q.lesson_id = l.id
 			 LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
 			 WHERE ${isNumericId ? "c.id" : "c.slug"} = $1

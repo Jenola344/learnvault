@@ -17,6 +17,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"))
 const Debug = lazy(() => import("./pages/Debug"))
 const Donor = lazy(() => import("./pages/Donor"))
 const Home = lazy(() => import("./pages/Home"))
+const History = lazy(() => import("./pages/History"))
 const Leaderboard = lazy(() => import("./pages/Leaderboard"))
 const Learn = lazy(() => import("./pages/Learn"))
 const LessonView = lazy(() => import("./pages/LessonView"))
@@ -51,6 +52,7 @@ function App() {
 					/>
 					<Route path="/dao/propose" element={renderRoute(<DaoPropose />)} />
 					<Route path="/leaderboard" element={renderRoute(<Leaderboard />)} />
+					<Route path="/history" element={renderRoute(<History />)} />
 					<Route path="/profile" element={renderRoute(<Profile />)} />
 					<Route
 						path="/profile/:walletAddress"
@@ -64,15 +66,12 @@ function App() {
 					<Route path="/treasury" element={renderRoute(<Treasury />)} />
 					<Route path="/donor" element={renderRoute(<Donor />)} />
 					<Route
-						path="/credentials/:nftId"
+						path="/credentials/:id"
 						element={renderRoute(<Credential />)}
 					/>
 					<Route path="/dashboard" element={renderRoute(<Dashboard />)} />
 					<Route path="/debug" element={renderRoute(<Debug />)} />
-					<Route
-						path="/debug/:contractName"
-						element={renderRoute(<Debug />)}
-					/>
+					<Route path="/debug/:contractName" element={renderRoute(<Debug />)} />
 					<Route path="*" element={renderRoute(<NotFound />)} />
 				</Route>
 			</Routes>
@@ -98,7 +97,8 @@ const RouteFallback = () => (
 )
 
 const AppLayout = () => (
-	<div className="min-h-screen flex flex-col pt-24 overflow-x-hidden w-full max-w-full">
+	// Issue #61 — Theme-aware background using CSS variables + Tailwind dark: variant
+	<div className="min-h-screen flex flex-col pt-24 overflow-x-hidden w-full max-w-full bg-[var(--color-app-bg)] text-[var(--color-app-text)] transition-colors duration-300">
 		<NetworkPreconnect />
 		<NavBar />
 		<main className="flex-1 relative z-10">
@@ -107,5 +107,4 @@ const AppLayout = () => (
 		<Footer />
 	</div>
 )
-
 export default App

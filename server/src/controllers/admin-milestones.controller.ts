@@ -2,9 +2,77 @@ import { type Request, type Response } from "express"
 import { milestoneStore } from "../db/milestone-store"
 import { type AdminRequest } from "../middleware/admin.middleware"
 import { credentialService } from "../services/credential.service"
+import { createEmailService } from "../services/email.service"
 import { stellarContractService } from "../services/stellar-contract.service"
+import { templates, toPlainText } from "../templates/email-templates"
+
+const emailService = createEmailService(
+	process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY || "",
+)
+
+type MilestoneStatusFilter = "pending" | "approved" | "rejected"
+
+function hasStellarMilestoneCredentials(): boolean {
+	return Boolean(
+		process.env.STELLAR_SECRET_KEY && process.env.COURSE_MILESTONE_CONTRACT_ID,
+	)
+}
 
 // ── GET /api/admin/milestones/pending ────────────────────────────────────────
+
+export async function listMilestones(
+	req: Request,
+	res: Response,
+): Promise<void> {
+	const page =
+		typeof req.query.page === "string"
+			? Number.parseInt(req.query.page, 10)
+			: 1
+	const pageSize =
+		typeof req.query.pageSize === "string"
+			? Number.parseInt(req.query.pageSize, 10)
+			: 10
+	const courseId =
+		typeof req.query.course === "string" ? req.query.course : undefined
+	const status =
+		typeof req.query.status === "string"
+			? (req.query.status as MilestoneStatusFilter)
+			: undefined
+
+	if (
+		status &&
+		status !== "pending" &&
+		status !== "approved" &&
+		status !== "rejected"
+	) {
+		res.status(400).json({ error: "Invalid milestone status filter" })
+		return
+	}
+
+	try {
+		const safePage = Number.isFinite(page) && page > 0 ? page : 1
+		const safePageSize =
+			Number.isFinite(pageSize) && pageSize > 0 ? Math.min(pageSize, 100) : 10
+		const result = await milestoneStore.listReports(
+			{
+				courseId,
+				status,
+			},
+			safePage,
+			safePageSize,
+		)
+
+		res.status(200).json({
+			data: result.data,
+			total: result.total,
+			page: safePage,
+			pageSize: safePageSize,
+		})
+	} catch (err) {
+		console.error("[admin] listMilestones error:", err)
+		res.status(500).json({ error: "Failed to fetch milestones" })
+	}
+}
 
 export async function getPendingMilestones(
 	_req: Request,
@@ -65,6 +133,10 @@ export async function approveMilestone(
 			res.status(409).json({ error: `Report already ${report.status}` })
 			return
 		}
+		if (!hasStellarMilestoneCredentials()) {
+			res.status(503).json({ error: "Stellar credentials not configured" })
+			return
+		}
 
 		// Trigger on-chain verify_milestone() call
 		const contractResult = await stellarContractService.callVerifyMilestone(
@@ -82,6 +154,31 @@ export async function approveMilestone(
 			rejection_reason: null,
 			contract_tx_hash: contractResult.txHash,
 		})
+
+		try {
+			if (report.scholar_email) {
+				await emailService.sendNotification({
+					to: report.scholar_email,
+					subject: "Milestone Approved ",
+					template: "milestone-approved-admin",
+					data: {
+						name: report.scholar_name || "Scholar",
+						courseTitle: report.course_title || `Course ${report.course_id}`,
+						milestoneTitle:
+							report.milestone_title ||
+							`Milestone ${report.milestone_number ?? report.milestone_id}`,
+						milestoneNumber: String(
+							report.milestone_number ?? report.milestone_id,
+						),
+						reward: String(report.lrn_reward ?? 0),
+						dashboardUrl: `${process.env.FRONTEND_URL || ""}/dashboard`,
+						unsubscribeUrl: "#",
+					},
+				})
+			}
+		} catch (emailErr) {
+			console.error("[admin] approval email failed (non-blocking):", emailErr)
+		}
 
 		let certificate = null
 		try {
@@ -143,6 +240,10 @@ export async function rejectMilestone(
 			res.status(409).json({ error: `Report already ${report.status}` })
 			return
 		}
+		if (!hasStellarMilestoneCredentials()) {
+			res.status(503).json({ error: "Stellar credentials not configured" })
+			return
+		}
 
 		// Emit on-chain rejection event
 		const contractResult = await stellarContractService.emitRejectionEvent(
@@ -162,7 +263,31 @@ export async function rejectMilestone(
 			contract_tx_hash: contractResult.txHash,
 		})
 
-		// TODO: send email notification to scholar (integrate email service here)
+		try {
+			if (report.scholar_email) {
+				await emailService.sendNotification({
+					to: report.scholar_email,
+					subject: "Milestone Rejected",
+					template: "milestone-rejected-admin",
+					data: {
+						name: report.scholar_name || "Scholar",
+						courseTitle: report.course_title || `Course ${report.course_id}`,
+						milestoneTitle:
+							report.milestone_title ||
+							`Milestone ${report.milestone_number ?? report.milestone_id}`,
+						milestoneNumber: String(
+							report.milestone_number ?? report.milestone_id,
+						),
+						rejectionReason: reason || "",
+						milestoneUrl: `${process.env.FRONTEND_URL || ""}/milestones`,
+						unsubscribeUrl: "#",
+					},
+				})
+			}
+		} catch (emailErr) {
+			console.error("[admin] rejection email failed (non-blocking):", emailErr)
+		}
+
 		console.info(
 			`[admin] Scholar ${report.scholar_address} notified of rejection for milestone ${report.milestone_id} in course ${report.course_id}`,
 		)
