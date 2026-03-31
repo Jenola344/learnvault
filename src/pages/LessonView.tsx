@@ -1,16 +1,24 @@
 import { Button } from "@stellar/design-system"
 import React, { useEffect, useMemo, useState } from "react"
-import { useParams, Navigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import LessonContent from "../components/LessonContent"
 import LessonSidebar from "../components/LessonSidebar"
 import MilestoneSubmitPanel from "../components/MilestoneSubmitPanel"
 import { LessonListSkeleton } from "../components/skeletons/LessonListSkeleton"
-import { courses } from "../data/courses"
-import { getCourseLessons, getLesson } from "../data/lessons"
 import { useCourse } from "../hooks/useCourse"
+import { useCourseDetail } from "../hooks/useCourses"
 import { useWallet } from "../hooks/useWallet"
 import { connectWallet } from "../util/wallet"
 import NotFound from "./NotFound"
+
+const loadingLesson = {
+	id: 0,
+	courseId: "",
+	title: "Loading lesson...",
+	content: "",
+	order: 0,
+	isMilestone: false,
+}
 
 const LessonView: React.FC = () => {
 	const { courseId, lessonId: lessonIdParam } = useParams<{
@@ -22,8 +30,14 @@ const LessonView: React.FC = () => {
 	const { address } = useWallet()
 	const { getCourseProgress, completeMilestone, isCompletingMilestone } =
 		useCourse()
+	const {
+		course,
+		isLoading: isLoadingCourse,
+		error: courseError,
+	} = useCourseDetail(courseId)
 
 	const [isLoadingContent, setIsLoadingContent] = useState(true)
+	const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
 	useEffect(() => {
 		// Simulate a short content load delay
@@ -32,17 +46,17 @@ const LessonView: React.FC = () => {
 		return () => clearTimeout(timer)
 	}, [lessonId])
 
-	const course = useMemo(
-		() => courses.find((c) => c.id === courseId),
-		[courseId],
-	)
-	const lesson = useMemo(
-		() => getLesson(courseId || "", lessonId),
-		[courseId, lessonId],
-	)
-	const allLessons = useMemo(() => getCourseLessons(courseId || ""), [courseId])
+	useEffect(() => {
+		setIsSidebarOpen(false)
+	}, [lessonId])
 
-	if (!course || !lesson) {
+	const lesson = useMemo(
+		() => course?.lessons.find((candidate) => candidate.id === lessonId),
+		[course, lessonId],
+	)
+	const allLessons = useMemo(() => course?.lessons ?? [], [course])
+
+	if (!isLoadingCourse && (courseError || !course || !lesson)) {
 		return <NotFound />
 	}
 
@@ -80,6 +94,26 @@ const LessonView: React.FC = () => {
 					>
 						Connect Wallet
 					</Button>
+				</div>
+			</div>
+		)
+	}
+
+	if (!course || !lesson) {
+		return (
+			<div className="container mx-auto px-4 py-8 lg:py-12 max-w-7xl">
+				<div className="grid grid-cols-1 lg:grid-cols-[1fr_2.5fr] gap-8">
+					<LessonListSkeleton />
+					<LessonContent
+						lesson={loadingLesson}
+						isLoading={true}
+						isCompleted={false}
+						isCompleting={false}
+						onMarkComplete={() => {}}
+						prevLessonId={null}
+						nextLessonId={null}
+						isNextLocked={true}
+					/>
 				</div>
 			</div>
 		)
@@ -143,13 +177,65 @@ const LessonView: React.FC = () => {
 				</h1>
 			</header>
 
-			<div className="grid grid-cols-1 lg:grid-cols-[1fr_2.5fr] gap-8">
-				<div className="lg:sticky lg:top-28 h-fit">
-					{isLoadingContent ? (
+			<div className="lg:hidden mb-6">
+				<button
+					type="button"
+					onClick={() => setIsSidebarOpen(true)}
+					className="w-full px-4 py-3 rounded-2xl border border-white/10 glass text-sm font-black uppercase tracking-widest text-white/70 hover:text-white hover:border-white/20 transition-colors"
+				>
+					Open Track Outline
+				</button>
+			</div>
+
+			<div
+				className={`lg:hidden ${isSidebarOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+			>
+				<button
+					type="button"
+					aria-label="Close lesson sidebar backdrop"
+					onClick={() => setIsSidebarOpen(false)}
+					className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+						isSidebarOpen ? "opacity-100" : "opacity-0"
+					}`}
+				/>
+				<aside
+					className={`fixed left-0 top-0 z-50 h-full w-[min(22rem,90vw)] border-r border-white/10 bg-[#070910] p-4 transition-transform duration-300 ${
+						isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+					}`}
+				>
+					<div className="mb-4 flex items-center justify-between">
+						<span className="text-xs font-black uppercase tracking-[0.25em] text-white/40">
+							Lessons
+						</span>
+						<button
+							type="button"
+							onClick={() => setIsSidebarOpen(false)}
+							className="w-9 h-9 rounded-xl border border-white/10 text-white/70 hover:text-white hover:border-white/20"
+							aria-label="Close lesson sidebar"
+						>
+							×
+						</button>
+					</div>
+					{isLoadingCourse || isLoadingContent ? (
 						<LessonListSkeleton />
 					) : (
 						<LessonSidebar
-							courseId={course.id}
+							courseId={course.slug}
+							lessons={allLessons}
+							completedMilestones={completedMilestones}
+							currentLessonId={lessonId}
+						/>
+					)}
+				</aside>
+			</div>
+
+			<div className="grid grid-cols-1 lg:grid-cols-[1fr_2.5fr] gap-8">
+				<div className="hidden lg:block lg:sticky lg:top-28 h-fit">
+					{isLoadingCourse || isLoadingContent ? (
+						<LessonListSkeleton />
+					) : (
+						<LessonSidebar
+							courseId={course.slug}
 							lessons={allLessons}
 							completedMilestones={completedMilestones}
 							currentLessonId={lessonId}
@@ -159,8 +245,8 @@ const LessonView: React.FC = () => {
 
 				<div>
 					<LessonContent
-						lesson={lesson}
-						isLoading={isLoadingContent}
+						lesson={lesson ?? loadingLesson}
+						isLoading={isLoadingCourse || isLoadingContent}
 						isCompleted={isCompleted}
 						isCompleting={isCompletingMilestone}
 						onMarkComplete={handleMarkComplete}
@@ -169,10 +255,10 @@ const LessonView: React.FC = () => {
 						isNextLocked={isNextLocked}
 					/>
 
-					{lesson.isMilestone && !isLoadingContent && (
+					{lesson?.isMilestone && !isLoadingCourse && !isLoadingContent && (
 						<div className="mt-12 animate-in fade-in slide-in-from-top-4 duration-1000">
 							<MilestoneSubmitPanel
-								courseId={course.id}
+								courseId={course.slug}
 								milestoneId={lesson.id}
 							/>
 						</div>
