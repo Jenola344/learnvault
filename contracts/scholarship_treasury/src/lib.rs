@@ -638,10 +638,9 @@ impl ScholarshipTreasury {
                 .storage()
                 .persistent()
                 .get::<_, Proposal>(&DataKey::Proposal(proposal_id))
+                .filter(|p| Self::proposal_status(&env, p) == status)
             {
-                if Self::proposal_status(&env, &proposal) == status {
-                    proposals.push_back(proposal);
-                }
+                proposals.push_back(proposal);
             }
             proposal_id += 1;
         }

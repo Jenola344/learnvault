@@ -51,9 +51,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 	const fetchComments = async () => {
 		setLoading(true)
 		try {
-			const res = await fetch(
-				`${API_URL}/api/proposals/${proposalId}/comments`,
-			)
+			const res = await fetch(`${API_URL}/api/proposals/${proposalId}/comments`)
 			const data = await res.json()
 			setComments(data)
 		} catch (err) {
@@ -65,14 +63,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
 	useEffect(() => {
 		let isMounted = true
-		const safeFetch = async (silent: boolean) => {
+		const safeFetch = async () => {
 			if (!isMounted) return
-			await fetchComments(silent)
+			await fetchComments()
 		}
 
-		void safeFetch(false)
+		void safeFetch()
 
-		const interval = setInterval(() => void safeFetch(true), pollInterval)
+		const interval = setInterval(() => void safeFetch(), pollInterval)
 		return () => {
 			isMounted = false
 			clearInterval(interval)
@@ -96,19 +94,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 		setSubmissionStatus(null)
 
 		try {
-			const res = await fetch(
-				`${API_URL}/api/comments`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
-					body: JSON.stringify({
-						proposalId,
-						content: newComment,
-						parentId,
-					}),
+			const res = await fetch(`${API_URL}/api/comments`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({
 					proposalId,
