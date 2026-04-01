@@ -56,15 +56,11 @@ const CommentCard: React.FC<CommentCardProps> = ({
 		const token = getAuthToken()
 		if (!token) return
 		try {
-			const res = await fetch(
-				`${API_URL}/api/comments/${comment.id}/vote`,
-				{
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
-					body: JSON.stringify({ type }),
+			const res = await fetch(`${API_URL}/api/comments/${comment.id}/vote`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({ type }),
 			})
@@ -78,13 +74,10 @@ const CommentCard: React.FC<CommentCardProps> = ({
 		const token = getAuthToken()
 		if (!token) return
 		try {
-			const res = await fetch(
-				`${API_URL}/api/comments/${comment.id}/pin`,
-				{
-					method: "PUT",
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
+			const res = await fetch(`${API_URL}/api/comments/${comment.id}/pin`, {
+				method: "PUT",
+				headers: {
+					Authorization: `Bearer ${token}`,
 				},
 			})
 			if (res.ok) onUpdate?.()
@@ -107,19 +100,11 @@ const CommentCard: React.FC<CommentCardProps> = ({
 		setReplyError(null)
 
 		try {
-			const res = await fetch(
-				`${API_URL}/api/comments`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
-					body: JSON.stringify({
-						proposalId: comment.proposal_id,
-						content: replyText,
-						parentId: comment.id,
-					}),
+			const res = await fetch(`${API_URL}/api/comments`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({
 					proposalId: comment.proposal_id,

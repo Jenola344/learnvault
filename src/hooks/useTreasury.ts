@@ -71,8 +71,8 @@ export function useTreasury() {
 		isLoading: isStatsLoading || isActivityLoading,
 		isError: Boolean(statsError || activityError),
 		refetch: () => {
-			refetchStats()
-			refetchActivity()
+			void refetchStats()
+			void refetchActivity()
 		},
 	}
 }
