@@ -1,6 +1,7 @@
 import { Button, Icon, Text, Modal, Profile } from "@stellar/design-system"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import ConfirmDialog from "./ConfirmDialog"
 import { useWallet } from "../hooks/useWallet"
 
 export const WalletButton = () => {
@@ -51,35 +52,17 @@ export const WalletButton = () => {
 			</Text>
 
 			<div id="modalContainer">
-				<Modal
-					visible={showDisconnectModal}
-					onClose={() => setShowDisconnectModal(false)}
-					parentId="modalContainer"
-				>
-					<Modal.Heading>
-						{t("wallet.connectedAs")}{" "}
-						<code style={{ lineBreak: "anywhere" }}>{address}</code>
-						{t("wallet.disconnectPrompt")}
-					</Modal.Heading>
-					<Modal.Footer itemAlignment="stack">
-						<Button
-							size="md"
-							variant="primary"
-							onClick={() => void handleDisconnect()}
-						>
-							{t("wallet.disconnect")}
-						</Button>
-						<Button
-							size="md"
-							variant="tertiary"
-							onClick={() => {
-								setShowDisconnectModal(false)
-							}}
-						>
-							{t("wallet.cancel")}
-						</Button>
-					</Modal.Footer>
-				</Modal>
+				{showDisconnectModal && (
+					<ConfirmDialog
+						title="Disconnect Wallet"
+						description={`You are currently connected as ${address}. Are you sure you want to disconnect? Any unsaved progress may be lost.`}
+						confirmLabel={t("wallet.disconnect")}
+						cancelLabel={t("wallet.cancel")}
+						onConfirm={() => void handleDisconnect()}
+						onCancel={() => setShowDisconnectModal(false)}
+						isDestructive
+					/>
+				)}
 			</div>
 
 			<Profile
