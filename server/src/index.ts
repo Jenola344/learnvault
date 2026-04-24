@@ -35,6 +35,7 @@ import { scholarshipsRouter } from "./routes/scholarships.routes"
 import { treasuryRouter } from "./routes/treasury.routes"
 import { createUploadRouter } from "./routes/upload.routes"
 import { validatorRouter } from "./routes/validator.routes"
+import { profilesRouter } from "./routes/profiles.routes"
 import { createAuthService } from "./services/auth.service"
 import {
 	createJwtService,
@@ -138,6 +139,7 @@ app.use("/api", adminMilestonesRouter)
 app.use("/api", scholarsRouter)
 app.use("/api", createUploadRouter(jwtService))
 app.use("/api", enrollmentsRouter)
+app.use("/api", profilesRouter)
 app.use("/api", scholarshipsRouter)
 app.use("/api", treasuryRouter)
 
