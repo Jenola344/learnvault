@@ -9,6 +9,7 @@ import { z } from "zod"
 
 import { initDb } from "./db/index"
 import { createNonceStore } from "./db/nonce-store"
+import { createTokenStore } from "./db/token-store"
 import { errorHandler } from "./middleware/error.middleware"
 import { globalLimiter } from "./middleware/rate-limit.middleware"
 import { buildOpenApiSpec } from "./openapi"
@@ -87,7 +88,8 @@ if (!isProduction && (!jwtPrivateKey || !jwtPublicKey)) {
 }
 
 const nonceStore = createNonceStore(env.REDIS_URL)
-const jwtService = createJwtService(jwtPrivateKey, jwtPublicKey)
+const tokenStore = createTokenStore(env.REDIS_URL)
+const jwtService = createJwtService(jwtPrivateKey, jwtPublicKey, tokenStore)
 const authService = createAuthService(nonceStore, jwtService)
 
 const app = express()
