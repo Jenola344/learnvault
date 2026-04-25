@@ -35,6 +35,7 @@ export default function NavBar() {
 
 	const navLinks = [
 		{ to: "/courses", label: t("nav.learn") },
+		{ to: "/peer-review", label: "Peer review" },
 		{ to: "/dao", label: t("nav.dao") },
 		{ to: "/community", label: "Community" },
 		{ to: "/leaderboard", label: t("nav.leaderboard") },
